@@ -1,7 +1,7 @@
-import { Anthropic } from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
 export interface ChatMessage {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
@@ -11,36 +11,42 @@ export interface ClaudeResponse {
 }
 
 async function getApiKey(): Promise<string | null> {
-  return process.env.ANTHROPIC_API_KEY ?? null;
+  return process.env.DEEPSEEK_API_KEY ?? null;
 }
 
 export async function chat(
   systemPrompt: string,
   messages: ChatMessage[],
-  model = "claude-3-5-haiku-20241022"
+  model = "deepseek-chat"
 ): Promise<ClaudeResponse> {
   const apiKey = await getApiKey();
 
   if (!apiKey) {
     return {
-      text: "⚙️ La IA no está configurada. Define ANTHROPIC_API_KEY en tu entorno.",
+      text: "⚙️ La IA no está configurada. Define DEEPSEEK_API_KEY en tu entorno.",
       isReal: false,
     };
   }
 
   try {
-    const client = new Anthropic({ apiKey });
-    const response = await client.messages.create({
-      model,
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: messages.map((message) => ({ role: message.role, content: message.content })),
+    const client = new OpenAI({
+      apiKey,
+      baseURL: "https://api.deepseek.com",
     });
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "";
+    const response = await client.chat.completions.create({
+      model,
+      max_tokens: 1024,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages.map((msg) => ({ role: msg.role as "user" | "assistant" | "system", content: msg.content })),
+      ],
+    });
+
+    const text = response.choices[0]?.message?.content || "";
     return { text, isReal: true };
   } catch (error) {
-    console.error("Claude error:", error);
+    console.error("DeepSeek error:", error);
     return {
       text: "Lo siento, hubo un error en la IA. Intenta de nuevo más tarde.",
       isReal: false,
