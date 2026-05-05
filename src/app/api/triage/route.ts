@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || "",
+const openai = new OpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY || "",
+  baseURL: "https://api.deepseek.com",
 });
 
 const TRIAGE_SYSTEM_PROMPT = `Eres un asistente de triaje médico para una clínica. Tu tarea es analizar los síntomas reportados por pacientes y generar un reporte estructurado de triaje.
@@ -38,11 +39,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const anthropicResponse = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+    const deepseekResponse = await openai.chat.completions.create({
+      model: "deepseek-chat",
       max_tokens: 1024,
-      system: TRIAGE_SYSTEM_PROMPT,
       messages: [
+        { role: "system", content: TRIAGE_SYSTEM_PROMPT },
         {
           role: "user",
           content: `Síntomas reportados por el paciente: "${symptoms}"\n\nGenera el reporte de triaje en JSON.`,
@@ -50,9 +51,7 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    const responseText = anthropicResponse.content[0].type === "text" 
-      ? anthropicResponse.content[0].text 
-      : "";
+    const responseText = deepseekResponse.choices[0]?.message?.content || "";
 
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {

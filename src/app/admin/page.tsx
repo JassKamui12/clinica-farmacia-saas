@@ -394,9 +394,9 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-400">ANTHROPIC_API_KEY</span>
-                      <span className={`text-xs px-2 py-1 rounded ${process.env.ANTHROPIC_API_KEY ? "bg-[#00F5A0]/10 text-[#00F5A0]" : "bg-amber-400/10 text-amber-400"}`}>
-                        {process.env.ANTHROPIC_API_KEY ? "Configurada" : "Pendiente"}
+                      <span className="text-sm text-slate-400">DEEPSEEK_API_KEY</span>
+                      <span className={`text-xs px-2 py-1 rounded ${process.env.DEEPSEEK_API_KEY ? "bg-[#00F5A0]/10 text-[#00F5A0]" : "bg-amber-400/10 text-amber-400"}`}>
+                        {process.env.DEEPSEEK_API_KEY ? "Configurada" : "Pendiente"}
                       </span>
                     </div>
                   </div>
