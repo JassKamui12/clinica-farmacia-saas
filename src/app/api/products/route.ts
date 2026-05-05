@@ -71,3 +71,22 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID requerido" }, { status: 400 });
+    }
+
+    await prisma.pharmacyProduct.delete({
+      where: { id },
+    });
+    return NextResponse.json({ message: "Producto eliminado" }, { status: 200 });
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  }
+}

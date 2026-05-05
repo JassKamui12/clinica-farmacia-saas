@@ -9,6 +9,267 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String          @id @default(cuid())
+  email         String          @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  name          String?
+  role          UserRole        @default(ADMIN)
+  whatsappPhone String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  accounts      Account[]
+  appointments  Appointment[]   @relation("DoctorAppointments")
+  visits        ClinicalVisit[]
+  notifications Notification[]
+  prescriptions Prescription[]
+  sessions      Session[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Patient {
+  id               String            @id @default(cuid())
+  name             String
+  phone            String?
+  email            String?
+  whatsappPhone    String?
+  dateOfBirth      DateTime?
+  gender           String?
+  notes            String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  appointments     Appointment[]     @relation("PatientAppointments")
+  visits           ClinicalVisit[]
+  followUps        PatientFollowUp[]
+  prescriptions    Prescription[]
+  triageReports    TriageReport[]
+  whatsappMessages WhatsAppMessage[]
+
+  @@index([whatsappPhone])
+  @@index([email])
+}
+
+model ClinicalVisit {
+  id        String   @id @default(cuid())
+  patientId String
+  doctorId  String
+  visitDate DateTime @default(now())
+  symptoms  String?
+  diagnosis String?
+  treatment String?
+  notes     String?
+  createdAt DateTime @default(now())
+  doctor    User     @relation(fields: [doctorId], references: [id])
+  patient   Patient  @relation(fields: [patientId], references: [id])
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([visitDate])
+}
+
+model PharmacyProduct {
+  id                String   @id @default(cuid())
+  name              String
+  category          String?
+  indications       String?
+  contraindications String?
+  price             Float    @default(0)
+  stock             Int      @default(0)
+  isAvailable       Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([category])
+}
+
+model Prescription {
+  id            String                    @id @default(cuid())
+  patientId     String
+  doctorId      String
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  notes         String?
+  productName   String
+  dosage        String?
+  instructions  String?
+  whatsappSent  Boolean                   @default(false)
+  billingStatus PrescriptionBillingStatus @default(PENDING)
+  totalPrice    Float                     @default(0)
+  quantity      Int                       @default(1)
+  followUp      PatientFollowUp?
+  doctor        User                      @relation(fields: [doctorId], references: [id])
+  patient       Patient                   @relation(fields: [patientId], references: [id])
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([billingStatus])
+}
+
+model AiRecommendation {
+  id        String   @id @default(cuid())
+  role      String   @default("medico")
+  prompt    String
+  response  String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id                String    @id @default(cuid())
+  title             String
+  content           String
+  channel           String    @default("in_app")
+  role              String?
+  userId            String?
+  phone             String?
+  whatsappMessageId String?
+  sent              Boolean   @default(false)
+  sentAt            DateTime?
+  read              Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  user              User?     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([channel])
+  @@index([read])
+}
+
+model Appointment {
+  id                  String            @id @default(cuid())
+  patientId           String
+  doctorId            String
+  date                DateTime
+  time                String
+  status              AppointmentStatus @default(PENDING)
+  reason              String?
+  notes               String?
+  whatsappReminder24h Boolean           @default(false)
+  whatsappReminder1h  Boolean           @default(false)
+  whatsappConfirmed   Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  doctor              User              @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  patient             Patient           @relation("PatientAppointments", fields: [patientId], references: [id])
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([date])
+  @@index([status])
+  @@index([date, time])
+}
+
+model WhatsAppMessage {
+  id           String           @id @default(cuid())
+  patientId    String?
+  phone        String
+  direction    MessageDirection
+  body         String?
+  messageType  MessageType      @default(TEXT)
+  templateName String?
+  status       MessageStatus    @default(SENT)
+  externalId   String?
+  error        String?
+  intent       String?
+  sessionData  String?
+  createdAt    DateTime         @default(now())
+  patient      Patient?         @relation(fields: [patientId], references: [id])
+
+  @@index([phone])
+  @@index([patientId])
+  @@index([direction])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PatientFollowUp {
+  id             String         @id @default(cuid())
+  patientId      String
+  prescriptionId String?        @unique
+  startDate      DateTime
+  endDate        DateTime?
+  status         FollowUpStatus @default(ACTIVE)
+  adherenceScore Int            @default(100)
+  lastCheckIn    DateTime?
+  nextCheckIn    DateTime?
+  notes          String?
+  alertTriggered Boolean        @default(false)
+  alertReason    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  patient        Patient        @relation(fields: [patientId], references: [id])
+  prescription   Prescription?  @relation(fields: [prescriptionId], references: [id])
+
+  @@index([patientId])
+  @@index([status])
+  @@index([nextCheckIn])
+  @@index([alertTriggered])
+}
+
+model TriageReport {
+  id                 String        @id @default(cuid())
+  patientId          String?
+  phone              String
+  symptoms           String
+  aiSummary          String?
+  urgency            TriageUrgency @default(LOW)
+  status             TriageStatus  @default(PENDING)
+  aiConfidence       Float         @default(0)
+  redFlags           String?
+  suggestedQuestions String?
+  createdAt          DateTime      @default(now())
+  reviewedAt         DateTime?
+  reviewedBy         String?
+  patient            Patient?      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([urgency])
+  @@index([status])
+  @@index([createdAt])
+  @@index([phone])
+}
+
+model WhatsAppSession {
+  id            String   @id @default(cuid())
+  phone         String   @unique
+  currentIntent String?
+  step          String   @default("menu")
+  contextData   String
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([phone])
+  @@index([expiresAt])
+}
+
 enum UserRole {
   ADMIN
   DOCTOR
@@ -49,240 +310,12 @@ enum FollowUpStatus {
   ALERT
 }
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  emailVerified DateTime?
-  passwordHash  String?
-  name          String?
-  role          UserRole  @default(ADMIN)
-  whatsappPhone String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  visits        ClinicalVisit[]
-  prescriptions Prescription[]
-  notifications Notification[]
-  appointments  Appointment[]     @relation("DoctorAppointments")
-  accounts      Account[]
-  sessions      Session[]
-
-  @@index([email])
-  @@index([role])
-}
-
-model Patient {
-  id            String   @id @default(cuid())
-  name          String
-  phone         String?
-  email         String?
-  whatsappPhone String?
-  dateOfBirth   DateTime?
-  gender        String?
-  notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  visits        ClinicalVisit[]
-  prescriptions Prescription[]
-  appointments  Appointment[]     @relation("PatientAppointments")
-  followUps     PatientFollowUp[]
-  whatsappMessages WhatsAppMessage[]
-  triageReports    TriageReport[]
-
-  @@index([whatsappPhone])
-  @@index([email])
-}
-
-model ClinicalVisit {
-  id          String   @id @default(cuid())
-  patientId   String
-  patient     Patient  @relation(fields: [patientId], references: [id])
-  doctorId    String
-  doctor      User     @relation(fields: [doctorId], references: [id])
-  visitDate   DateTime @default(now())
-  symptoms    String?
-  diagnosis   String?
-  treatment   String?
-  notes       String?
-  createdAt   DateTime @default(now())
-
-  @@index([patientId])
-  @@index([doctorId])
-  @@index([visitDate])
-}
-
-model PharmacyProduct {
-  id                 String   @id @default(cuid())
-  name               String
-  category           String?
-  indications        String?
-  contraindications  String?
-  price              Float    @default(0)
-  stock              Int      @default(0)
-  isAvailable        Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  @@index([category])
-}
-
 enum PrescriptionBillingStatus {
   PENDING
   PREPARED
   BILLED
   DELIVERED
   CANCELLED
-}
-
-model Prescription {
-  id            String   @id @default(cuid())
-  patientId     String
-  patient       Patient  @relation(fields: [patientId], references: [id])
-  doctorId      String
-  doctor        User     @relation(fields: [doctorId], references: [id])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  notes         String?
-  productName   String
-  dosage        String?
-  instructions  String?
-  whatsappSent  Boolean  @default(false)
-  billingStatus PrescriptionBillingStatus @default(PENDING)
-  totalPrice    Float    @default(0)
-  quantity      Int      @default(1)
-
-  followUp      PatientFollowUp?
-
-  @@index([patientId])
-  @@index([doctorId])
-  @@index([billingStatus])
-}
-
-model AiRecommendation {
-  id        String   @id @default(cuid())
-  role      String   @default("medico")
-  prompt    String
-  response  String
-  createdAt DateTime @default(now())
-}
-
-model Notification {
-  id               String   @id @default(cuid())
-  title            String
-  content          String
-  channel          String   @default("in_app")
-  role             String?
-  userId           String?
-  user             User?    @relation(fields: [userId], references: [id])
-  phone            String?
-  whatsappMessageId String?
-  sent             Boolean  @default(false)
-  sentAt           DateTime?
-  read             Boolean  @default(false)
-  createdAt        DateTime @default(now())
-
-  @@index([userId])
-  @@index([channel])
-  @@index([read])
-}
-
-model Appointment {
-  id                    String          @id @default(cuid())
-  patientId             String
-  patient               Patient         @relation("PatientAppointments", fields: [patientId], references: [id])
-  doctorId              String
-  doctor                User            @relation("DoctorAppointments", fields: [doctorId], references: [id])
-  date                  DateTime
-  time                  String
-  status                AppointmentStatus @default(PENDING)
-  reason                String?
-  notes                 String?
-  whatsappReminder24h   Boolean         @default(false)
-  whatsappReminder1h    Boolean         @default(false)
-  whatsappConfirmed     Boolean         @default(false)
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
-
-  @@index([patientId])
-  @@index([doctorId])
-  @@index([date])
-  @@index([status])
-  @@index([date, time])
-}
-
-model WhatsAppMessage {
-  id           String          @id @default(cuid())
-  patientId    String?
-  patient      Patient?        @relation(fields: [patientId], references: [id])
-  phone        String
-  direction    MessageDirection
-  body         String?
-  messageType  MessageType     @default(TEXT)
-  templateName String?
-  status       MessageStatus   @default(SENT)
-  externalId   String?
-  error        String?
-  intent       String?
-  sessionData  String?
-  createdAt    DateTime        @default(now())
-
-  @@index([phone])
-  @@index([patientId])
-  @@index([direction])
-  @@index([status])
-  @@index([createdAt])
-}
-
-model PatientFollowUp {
-  id              String         @id @default(cuid())
-  patientId       String
-  patient         Patient        @relation(fields: [patientId], references: [id])
-  prescriptionId  String?        @unique
-  prescription    Prescription?  @relation(fields: [prescriptionId], references: [id])
-  startDate       DateTime
-  endDate         DateTime?
-  status          FollowUpStatus @default(ACTIVE)
-  adherenceScore  Int            @default(100)
-  lastCheckIn     DateTime?
-  nextCheckIn     DateTime?
-  notes           String?
-  alertTriggered  Boolean        @default(false)
-  alertReason     String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  @@index([patientId])
-  @@index([status])
-  @@index([nextCheckIn])
-  @@index([alertTriggered])
 }
 
 enum TriageUrgency {
@@ -297,41 +330,4 @@ enum TriageStatus {
   REVIEWED
   ESCALATED
   RESOLVED
-}
-
-model TriageReport {
-  id            String        @id @default(cuid())
-  patientId     String?
-  patient       Patient?      @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  phone         String
-  symptoms      String
-  aiSummary     String?
-  urgency       TriageUrgency @default(LOW)
-  status        TriageStatus  @default(PENDING)
-  aiConfidence  Float         @default(0)
-  redFlags      String?
-  suggestedQuestions String?
-  createdAt     DateTime      @default(now())
-  reviewedAt    DateTime?
-  reviewedBy    String?
-
-  @@index([patientId])
-  @@index([urgency])
-  @@index([status])
-  @@index([createdAt])
-  @@index([phone])
-}
-
-model WhatsAppSession {
-  id           String   @id @default(cuid())
-  phone        String   @unique
-  currentIntent String?
-  step         String   @default("menu")
-  contextData  String
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([phone])
-  @@index([expiresAt])
 }

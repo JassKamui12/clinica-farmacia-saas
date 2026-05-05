@@ -8,7 +8,7 @@ export async function GET(
   try {
     const { id: patientId } = await params;
 
-    const [patient, visits, prescriptions, appointments, followUps] = await Promise.all([
+    const [patient, visits, prescriptions, appointments, followUps, triageReports] = await Promise.all([
       prisma.patient.findUnique({ where: { id: patientId } }),
       prisma.clinicalVisit.findMany({
         where: { patientId },
@@ -31,6 +31,10 @@ export async function GET(
         include: { prescription: true },
         orderBy: { createdAt: "desc" },
       }),
+      prisma.triageReport.findMany({
+        where: { patientId },
+        orderBy: { createdAt: "desc" },
+      }),
     ]);
 
     if (!patient) {
@@ -48,6 +52,7 @@ export async function GET(
       prescriptions,
       appointments,
       followUps,
+      triageReports,
       summary: { totalVisits, lastVisit, lastDiagnosis, activeFollowUps },
     });
   } catch (error: any) {

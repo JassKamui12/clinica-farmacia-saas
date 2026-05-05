@@ -24,6 +24,17 @@ export default function InventoryPage() {
   const [filter, setFilter] = useState("");
   const [showStockOnly, setShowStockOnly] = useState(false);
   const [message, setMessage] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [form, setForm] = useState({
+    name: "",
+    category: "",
+    indications: "",
+    contraindications: "",
+    price: 0,
+    stock: 0,
+    isAvailable: true,
+  });
 
   const loadData = useCallback(async () => {
     const res = await fetch("/api/products");
@@ -45,6 +56,60 @@ export default function InventoryPage() {
   const outOfStock = products.filter((p) => p.stock <= 0).length;
   const totalValue = products.reduce((sum, p) => sum + p.price * p.stock, 0);
 
+  const openCreate = () => {
+    setEditingProduct(null);
+    setForm({ name: "", category: "", indications: "", contraindications: "", price: 0, stock: 0, isAvailable: true });
+    setShowModal(true);
+  };
+
+  const openEdit = (product: Product) => {
+    setEditingProduct(product);
+    setForm({
+      name: product.name,
+      category: product.category || "",
+      indications: product.indications || "",
+      contraindications: product.contraindications || "",
+      price: product.price,
+      stock: product.stock,
+      isAvailable: product.isAvailable,
+    });
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage("");
+
+    const method = editingProduct ? "PATCH" : "POST";
+    const body = editingProduct ? { id: editingProduct.id, ...form } : form;
+
+    const res = await fetch("/api/products", {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      setMessage(editingProduct ? "Producto actualizado" : "Producto creado");
+      setShowModal(false);
+      loadData();
+    } else {
+      setMessage("Error al guardar");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("¿Eliminar este producto?")) return;
+
+    const res = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setMessage("Producto eliminado");
+      loadData();
+    } else {
+      setMessage("Error al eliminar");
+    }
+  };
+
   if (status === "loading") return <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center"><p className="text-slate-400">Cargando...</p></div>;
 
   return (
@@ -58,9 +123,14 @@ export default function InventoryPage() {
               <h1 className="text-3xl font-bold text-slate-100">Inventario de Farmacia</h1>
               <p className="text-slate-500 mt-1">{products.length} productos registrados</p>
             </div>
-            <Link href="/" className="rounded-2xl border border-[#30363D] px-5 py-2.5 text-sm text-slate-300 hover:border-[#00F5A0] hover:text-[#00F5A0] transition-colors">
-              ← Volver
-            </Link>
+            <div className="flex gap-3">
+              <button onClick={openCreate} className="rounded-2xl bg-gradient-to-r from-[#00F5A0] to-[#00D9FF] px-5 py-2.5 text-sm font-bold text-[#0A0C10]">
+                + Nuevo Producto
+              </button>
+              <Link href="/" className="rounded-2xl border border-[#30363D] px-5 py-2.5 text-sm text-slate-300 hover:border-[#00F5A0] hover:text-[#00F5A0] transition-colors">
+                ← Volver
+              </Link>
+            </div>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-4">
@@ -125,6 +195,14 @@ export default function InventoryPage() {
                   </span>
                 </div>
                 {p.indications && <p className="text-xs text-slate-600 mt-3 truncate">{p.indications}</p>}
+                <div className="flex gap-2 mt-4">
+                  <button onClick={() => openEdit(p)} className="flex-1 rounded-xl border border-[#30363D] py-2 text-xs text-slate-400 hover:text-[#00F5A0] transition-colors">
+                    Editar
+                  </button>
+                  <button onClick={() => handleDelete(p.id)} className="flex-1 rounded-xl border border-red-400/30 py-2 text-xs text-red-400 hover:bg-red-400/10 transition-colors">
+                    Eliminar
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -137,6 +215,34 @@ export default function InventoryPage() {
           )}
         </div>
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-[#161B22] border border-[#30363D] rounded-2xl p-6 w-full max-w-md space-y-4">
+            <h2 className="text-xl font-bold text-slate-100">{editingProduct ? "Editar Producto" : "Nuevo Producto"}</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre" className="w-full rounded-xl border border-[#30363D] bg-[#0A0C10] px-4 py-2 text-sm text-slate-200 outline-none focus:border-[#00F5A0]" />
+              <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Categoría" className="w-full rounded-xl border border-[#30363D] bg-[#0A0C10] px-4 py-2 text-sm text-slate-200 outline-none focus:border-[#00F5A0]" />
+              <input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} placeholder="Precio" className="w-full rounded-xl border border-[#30363D] bg-[#0A0C10] px-4 py-2 text-sm text-slate-200 outline-none focus:border-[#00F5A0]" />
+              <input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} placeholder="Stock" className="w-full rounded-xl border border-[#30363D] bg-[#0A0C10] px-4 py-2 text-sm text-slate-200 outline-none focus:border-[#00F5A0]" />
+              <textarea value={form.indications} onChange={(e) => setForm({ ...form, indications: e.target.value })} placeholder="Indicaciones" className="w-full rounded-xl border border-[#30363D] bg-[#0A0C10] px-4 py-2 text-sm text-slate-200 outline-none focus:border-[#00F5A0] h-20" />
+              <textarea value={form.contraindications} onChange={(e) => setForm({ ...form, contraindications: e.target.value })} placeholder="Contraindicaciones" className="w-full rounded-xl border border-[#30363D] bg-[#0A0C10] px-4 py-2 text-sm text-slate-200 outline-none focus:border-[#00F5A0] h-20" />
+              <label className="flex items-center gap-2 text-sm text-slate-300">
+                <input type="checkbox" checked={form.isAvailable} onChange={(e) => setForm({ ...form, isAvailable: e.target.checked })} />
+                Disponible
+              </label>
+              <div className="flex gap-3">
+                <button type="submit" className="flex-1 rounded-xl bg-gradient-to-r from-[#00F5A0] to-[#00D9FF] py-2 text-sm font-bold text-[#0A0C10]">
+                  {editingProduct ? "Actualizar" : "Crear"}
+                </button>
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 rounded-xl border border-[#30363D] py-2 text-sm text-slate-400">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

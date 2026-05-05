@@ -58,12 +58,23 @@ interface FollowUp {
   notes?: string | null;
 }
 
+interface TriageReport {
+  id: string;
+  symptoms: string;
+  aiSummary: string;
+  urgency: string;
+  redFlags?: string | null;
+  status: string;
+  createdAt: string;
+}
+
 interface PatientHistory {
   patient: Patient;
   visits: Visit[];
   prescriptions: Prescription[];
   appointments: Appointment[];
   followUps: FollowUp[];
+  triageReports: TriageReport[];
   summary: { totalVisits: number; lastVisit: string | null; lastDiagnosis: string | null; activeFollowUps: number };
 }
 
@@ -75,7 +86,7 @@ export default function PatientHistoryPage() {
 
   const [history, setHistory] = useState<PatientHistory | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"visits" | "prescriptions" | "appointments" | "followups">("visits");
+  const [activeTab, setActiveTab] = useState<"visits" | "prescriptions" | "appointments" | "followups" | "triage">("visits");
 
   useEffect(() => {
     if (sessionStatus === "unauthenticated") { router.push("/login"); return; }
@@ -92,7 +103,7 @@ export default function PatientHistoryPage() {
 
   if (!history) return <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center"><p className="text-red-400">Paciente no encontrado</p></div>;
 
-  const { patient, visits, prescriptions, appointments, followUps, summary } = history;
+  const { patient, visits, prescriptions, appointments, followUps, triageReports, summary } = history;
   const age = patient.dateOfBirth ? Math.floor((Date.now() - new Date(patient.dateOfBirth).getTime()) / 31557600000) : null;
 
   return (
@@ -141,26 +152,27 @@ export default function PatientHistoryPage() {
             </div>
           )}
 
-          <div className="flex gap-2">
-            {[
-              { key: "visits", label: "Consultas", count: visits.length },
-              { key: "prescriptions", label: "Recetas", count: prescriptions.length },
-              { key: "appointments", label: "Citas", count: appointments.length },
-              { key: "followups", label: "Seguimientos", count: followUps.length },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key as any)}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
-                  activeTab === tab.key
-                    ? "bg-[#00F5A0] text-[#0A0C10]"
-                    : "border border-[#30363D] text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                {tab.label} ({tab.count})
-              </button>
-            ))}
-          </div>
+           <div className="flex gap-2">
+             {[
+               { key: "visits", label: "Consultas", count: visits.length },
+               { key: "prescriptions", label: "Recetas", count: prescriptions.length },
+               { key: "appointments", label: "Citas", count: appointments.length },
+               { key: "followups", label: "Seguimientos", count: followUps.length },
+               { key: "triage", label: "Triajes", count: triageReports.length },
+             ].map((tab) => (
+               <button
+                 key={tab.key}
+                 onClick={() => setActiveTab(tab.key as any)}
+                 className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+                   activeTab === tab.key
+                     ? "bg-[#00F5A0] text-[#0A0C10]"
+                     : "border border-[#30363D] text-slate-400 hover:text-slate-200"
+                 }`}
+               >
+                 {tab.label} ({tab.count})
+               </button>
+             ))}
+           </div>
 
           {activeTab === "visits" && (
             <div className="space-y-3">
@@ -309,6 +321,45 @@ export default function PatientHistoryPage() {
                         }`}>{fu.status}</span>
                       </div>
                     </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {activeTab === "triage" && (
+            <div className="space-y-3">
+              {triageReports.length === 0 ? (
+                <div className="rounded-2xl border border-[#30363D] bg-[#161B22] p-12 text-center">
+                  <span className="material-symbols-outlined text-5xl text-slate-600 mb-3">health_and_safety</span>
+                  <p className="text-slate-500">Sin triajes registrados</p>
+                </div>
+              ) : (
+                triageReports.map((tr) => (
+                  <div key={tr.id} className={`rounded-2xl border p-5 ${
+                    tr.urgency === "EMERGENCY" ? "border-red-400/50 bg-red-400/5" :
+                    tr.urgency === "HIGH" ? "border-amber-400/50 bg-amber-400/5" :
+                    "border-[#30363D] bg-[#161B22]"
+                  }`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="font-semibold text-slate-100">Síntomas: {tr.symptoms}</p>
+                        <p className="text-xs text-slate-500">{new Date(tr.createdAt).toLocaleDateString("es-ES")}</p>
+                      </div>
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                        tr.urgency === "EMERGENCY" ? "bg-red-400/10 text-red-400" :
+                        tr.urgency === "HIGH" ? "bg-amber-400/10 text-amber-400" :
+                        tr.urgency === "MEDIUM" ? "bg-blue-400/10 text-blue-400" :
+                        "bg-[#00F5A0]/10 text-[#00F5A0]"
+                      }`}>{tr.urgency}</span>
+                    </div>
+                    <p className="text-sm text-slate-300 mb-2">{tr.aiSummary}</p>
+                    {tr.redFlags && <p className="text-xs text-red-400">🚩 {tr.redFlags}</p>}
+                    <span className={`text-xs font-medium ${
+                      tr.status === "PENDING" ? "text-amber-400" :
+                      tr.status === "REVIEWED" ? "text-blue-400" :
+                      "text-[#00F5A0]"
+                    }`}>{tr.status}</span>
                   </div>
                 ))
               )}
