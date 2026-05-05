@@ -32,6 +32,8 @@ export default function LoginPage() {
       return;
     }
 
+    // Esperar a que la sesión se establezca
+    await new Promise(resolve => setTimeout(resolve, 500));
     router.push("/");
     router.refresh();
   }
