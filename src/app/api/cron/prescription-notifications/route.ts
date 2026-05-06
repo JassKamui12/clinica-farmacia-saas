@@ -11,15 +11,15 @@ export async function GET(req: Request) {
   const pendingPrescriptions = await prisma.prescription.findMany({
     where: { whatsappSent: false, createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
     include: {
-      patient: true,
-      doctor: { select: { name: true } },
+      Patient: true,
+      User: { select: { name: true } },
     },
   });
 
   const results = [];
 
   for (const prescription of pendingPrescriptions) {
-    const patient = prescription.patient;
+    const patient = prescription.Patient;
     const phone = patient.whatsappPhone || patient.phone;
 
     if (!phone) {
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
       continue;
     }
 
-    const body = `💊 *Receta Generada*\n\nHola ${patient.name}, el Dr/Dra. ${prescription.doctor.name || "médico"} ha generado una receta:\n\n💊 ${prescription.productName}\n📋 ${prescription.dosage || ""}\n📝 ${prescription.instructions || ""}\n\nPuedes pasar por la farmacia.`;
+    const body = `💊 *Receta Generada*\n\nHola ${patient.name}, el Dr/Dra. ${prescription.User?.name || "médico"} ha generado una receta:\n\n💊 ${prescription.productName}\n📋 ${prescription.dosage || ""}\n📝 ${prescription.instructions || ""}\n\nPuedes pasar por la farmacia.`;
 
     const result = await sendTextMessage({
       phone,

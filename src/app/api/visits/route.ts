@@ -19,15 +19,15 @@ async function getDefaultDoctor() {
 export async function GET() {
   const visits = await prisma.clinicalVisit.findMany({
     orderBy: { visitDate: "desc" },
-    include: { patient: true, doctor: true },
+    include: { Patient: true, User: true },
   });
 
   return NextResponse.json(
     visits.map((visit) => ({
       id: visit.id,
       patientId: visit.patientId,
-      patientName: visit.patient.name,
-      doctorName: visit.doctor.name || visit.doctor.email,
+      patientName: visit.Patient.name,
+      doctorName: visit.User.name || visit.User.email,
       symptoms: visit.symptoms,
       diagnosis: visit.diagnosis,
       treatment: visit.treatment,
@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
 
   const visit = await prisma.clinicalVisit.create({
     data: {
-      patient: { connect: { id: body.patientId } },
-      doctor: { connect: { id: doctor?.id ?? (await getDefaultDoctor()).id } },
+      Patient: { connect: { id: body.patientId } },
+      User: { connect: { id: doctor?.id ?? (await getDefaultDoctor()).id } },
       symptoms: body.symptoms,
       diagnosis: body.diagnosis,
       treatment: body.treatment,

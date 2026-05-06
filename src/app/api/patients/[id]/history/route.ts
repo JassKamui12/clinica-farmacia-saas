@@ -12,23 +12,23 @@ export async function GET(
       prisma.patient.findUnique({ where: { id: patientId } }),
       prisma.clinicalVisit.findMany({
         where: { patientId },
-        include: { doctor: { select: { name: true, email: true } } },
+        include: { User: { select: { name: true, email: true } } },
         orderBy: { visitDate: "desc" },
       }),
       prisma.prescription.findMany({
         where: { patientId },
-        include: { doctor: { select: { name: true, email: true } } },
+        include: { User: { select: { name: true, email: true } } },
         orderBy: { createdAt: "desc" },
       }),
       prisma.appointment.findMany({
         where: { patientId },
-        include: { doctor: { select: { name: true, email: true } } },
+        include: { User: { select: { name: true, email: true } } },
         orderBy: { date: "desc" },
         take: 10,
       }),
       prisma.patientFollowUp.findMany({
         where: { patientId },
-        include: { prescription: true },
+        include: { Prescription: true },
         orderBy: { createdAt: "desc" },
       }),
       prisma.triageReport.findMany({

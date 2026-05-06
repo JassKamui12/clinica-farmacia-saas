@@ -39,8 +39,8 @@ export async function GET(req: NextRequest) {
   const followUps = await prisma.patientFollowUp.findMany({
     where,
     include: {
-      patient: { select: { id: true, name: true, whatsappPhone: true } },
-      prescription: { select: { id: true, productName: true, dosage: true } },
+      Patient: { select: { id: true, name: true, whatsappPhone: true } },
+      Prescription: { select: { id: true, productName: true, dosage: true } },
     },
     orderBy: { nextCheckIn: "asc" },
   });
@@ -76,8 +76,8 @@ export async function POST(req: NextRequest) {
       notes: notes || null,
     },
     include: {
-      patient: { select: { name: true, whatsappPhone: true } },
-      prescription: { select: { productName: true, dosage: true } },
+      Patient: { select: { name: true, whatsappPhone: true } },
+      Prescription: { select: { productName: true, dosage: true } },
     },
   });
 
@@ -114,8 +114,8 @@ export async function PATCH(req: NextRequest) {
       ...(status ? { nextCheckIn: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) } : {}),
     },
     include: {
-      patient: { select: { name: true, whatsappPhone: true } },
-      prescription: { select: { productName: true } },
+      Patient: { select: { name: true, whatsappPhone: true } },
+      Prescription: { select: { productName: true } },
     },
   });
 

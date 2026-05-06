@@ -256,7 +256,7 @@ async function handleConsultarCita(phone: string) {
       date: { gte: new Date() },
     },
     include: {
-      doctor: { select: { name: true } },
+      User: { select: { name: true } },
     },
     orderBy: [{ date: "asc" }, { time: "asc" }],
   });
@@ -271,7 +271,7 @@ async function handleConsultarCita(phone: string) {
 
     await sendTextMessage({
       phone,
-      body: `📅 Tu próxima cita:\n\n📆 ${dateStr}\n⏰ ${nextAppointment.time}\n👨‍⚕️ ${nextAppointment.doctor.name || "Doctor asignado"}\n📋 Estado: ${nextAppointment.status}\n\nPara cancelar o reagendar, responde "cancelar" y te ayudaré.`,
+      body: `📅 Tu próxima cita:\n\n📆 ${dateStr}\n⏰ ${nextAppointment.time}\n👨‍⚕️ ${nextAppointment.User?.name || "Doctor asignado"}\n📋 Estado: ${nextAppointment.status}\n\nPara cancelar o reagendar, responde "cancelar" y te ayudaré.`,
     });
   } else {
     await sendTextMessage({
@@ -296,11 +296,11 @@ async function handleSeguimiento(phone: string) {
 
   const activeFollowUp = await prisma.patientFollowUp.findFirst({
     where: { patientId: patient.id, status: "ACTIVE" },
-    include: { prescription: true },
+    include: { Prescription: true },
   });
 
   if (activeFollowUp) {
-    const medication = activeFollowUp.prescription?.productName || "tu tratamiento";
+    const medication = activeFollowUp.Prescription?.productName || "tu tratamiento";
     await sendTextMessage({
       phone,
       body: `📋 *Seguimiento de Tratamiento*\n\nMedicamento: ${medication}\n\n¿Cómo te sientes? Responde:\n1️⃣ Todo bien, sin problemas\n2️⃣ Molestias leves\n3️⃣ Efectos adversos\n4️⃣ No he podido tomarlo`,
@@ -529,14 +529,14 @@ async function handleConsultarReceta(phone: string) {
 
   const lastPrescription = await prisma.prescription.findFirst({
     where: { patientId: patient.id },
-    include: { doctor: { select: { name: true } } },
+    include: { User: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
   });
 
   if (lastPrescription) {
     await sendTextMessage({
       phone,
-      body: `💊 *Tu última receta:*\n\nMedicamento: ${lastPrescription.productName}\nDosis: ${lastPrescription.dosage || "No especificada"}\nInstrucciones: ${lastPrescription.instructions || "No especificadas"}\nDoctor: ${lastPrescription.doctor.name || "No asignado"}\n\nSi necesitas una nueva receta, consulta con tu médico.`,
+      body: `💊 *Tu última receta:*\n\nMedicamento: ${lastPrescription.productName}\nDosis: ${lastPrescription.dosage || "No especificada"}\nInstrucciones: ${lastPrescription.instructions || "No especificadas"}\nDoctor: ${lastPrescription.User?.name || "No asignado"}\n\nSi necesitas una nueva receta, consulta con tu médico.`,
     });
   } else {
     await sendTextMessage({

@@ -20,14 +20,14 @@ export async function GET(req: Request) {
       whatsappReminder1h: false,
     },
     include: {
-      patient: true,
+      Patient: true,
     },
   });
 
   const results = [];
 
   for (const appointment of appointments1h) {
-    const patient = appointment.patient;
+    const patient = appointment.Patient;
     const phone = patient.whatsappPhone || patient.phone;
 
     if (!phone) {

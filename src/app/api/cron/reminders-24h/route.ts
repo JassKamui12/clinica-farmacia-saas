@@ -27,15 +27,15 @@ export async function GET(req: Request) {
       whatsappReminder24h: false,
     },
     include: {
-      patient: true,
-      doctor: { select: { name: true } },
+      Patient: true,
+      User: { select: { name: true } },
     },
   });
 
   const results = [];
 
   for (const appointment of appointments24h) {
-    const patient = appointment.patient;
+    const patient = appointment.Patient;
     const phone = patient.whatsappPhone || patient.phone;
 
     if (!phone) {
@@ -53,7 +53,7 @@ export async function GET(req: Request) {
       day: "numeric",
     });
 
-    const body = `🏥 *Recordatorio de Cita*\n\nHola ${patient.name}, tienes una cita mañana:\n\n📅 ${dateStr}\n⏰ ${appointment.time}\n👨‍⚕️ ${appointment.doctor.name || "Doctor asignado"}\n\nResponde "confirmo" o "cancelo" para gestionar tu cita.`;
+    const body = `🏥 *Recordatorio de Cita*\n\nHola ${patient.name}, tienes una cita mañana:\n\n📅 ${dateStr}\n⏰ ${appointment.time}\n👨‍⚕️ ${appointment.User?.name || "Doctor asignado"}\n\nResponde "confirmo" o "cancelo" para gestionar tu cita.`;
 
     const result = await sendTextMessage({
       phone,

@@ -47,8 +47,9 @@ interface Appointment {
 }
 
 export default function ConsultationsPage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const router = useRouter();
+  const doctorId = session?.user?.id || "";
   const [patients, setPatients] = useState<Patient[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
@@ -93,9 +94,10 @@ export default function ConsultationsPage() {
   }, []);
 
   useEffect(() => {
-    if (status === "unauthenticated") { router.push("/login"); return; }
-    if (status === "authenticated") { loadData(); }
-  }, [status, loadData]);
+    loadData();
+  }, [loadData]);
+
+  if (!session) return <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center"><p className="text-slate-400">Cargando...</p></div>;
 
   async function loadPatientHistory(patientId: string) {
     if (!patientId) { setSelectedPatientHistory([]); return; }
@@ -137,7 +139,7 @@ export default function ConsultationsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         patientId: selectedPatientId,
-        doctorId: session?.user?.id,
+        doctorId: doctorId,
         symptoms, diagnosis, treatment, notes: visitNotes,
       }),
     });
@@ -163,7 +165,7 @@ export default function ConsultationsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         patientId: selectedPatientId,
-        doctorId: session?.user?.id,
+        doctorId: doctorId,
         productName: product.name,
         dosage, instructions, notes: prescriptionNotes,
         quantity: prescriptionQty,
@@ -186,13 +188,11 @@ export default function ConsultationsPage() {
     loadPatientHistory(appt.patient.id);
   }
 
-  if (status === "loading") return <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center"><p className="text-slate-400">Cargando...</p></div>;
-
   const selectedPatient = patients.find((p) => p.id === selectedPatientId);
 
   return (
     <main className="min-h-screen bg-[#0A0C10] text-slate-200">
-      <Sidebar activePath="/consultations" userRole={session?.user.role as "ADMIN" | "DOCTOR" | "PHARMACIST"} userName={session?.user.name} userEmail={session?.user.email} />
+      <Sidebar activePath="/consultations" userRole="DOCTOR" userName="Dr. Desarrollo" userEmail="dev@mediflow.com" />
 
       <div className="ml-[240px] p-8">
         <div className="max-w-[1400px] mx-auto space-y-6">

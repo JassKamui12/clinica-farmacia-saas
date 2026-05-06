@@ -31,7 +31,6 @@ export async function GET(req: NextRequest) {
   const messages = await prisma.whatsAppMessage.findMany({
     orderBy: { createdAt: "desc" },
     take: limit,
-    include: { patient: { select: { name: true, whatsappPhone: true } } },
   });
 
   return NextResponse.json(messages);

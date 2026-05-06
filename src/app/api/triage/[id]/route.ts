@@ -18,7 +18,7 @@ export async function PATCH(
       where: { id },
       data: updateData,
       include: {
-        patient: { select: { name: true, whatsappPhone: true } },
+        Patient: { select: { name: true, whatsappPhone: true } },
       },
     });
 

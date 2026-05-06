@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
@@ -49,7 +48,6 @@ const statusLabels: Record<AppointmentStatus, { label: string; color: string; bg
 };
 
 export default function AppointmentsPage() {
-  const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -84,14 +82,8 @@ export default function AppointmentsPage() {
   }, [filterDate]);
 
   useEffect(() => {
-    if (sessionStatus === "unauthenticated") {
-      router.push("/login");
-      return;
-    }
-    if (sessionStatus === "authenticated") {
-      loadData();
-    }
-  }, [sessionStatus, loadData]);
+    loadData();
+  }, [loadData]);
 
   async function fetchAvailability(date: string, doctorId: string) {
     if (!date || !doctorId) return;
@@ -183,17 +175,9 @@ export default function AppointmentsPage() {
   const pendingCount = appointments.filter((a) => a.status === "PENDING").length;
   const confirmedCount = appointments.filter((a) => a.status === "CONFIRMED").length;
 
-  if (sessionStatus === "loading") {
-    return (
-      <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center">
-        <p className="text-slate-400">Cargando...</p>
-      </div>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-[#0A0C10] text-slate-200">
-      <Sidebar activePath="/appointments" userRole={session?.user.role as "ADMIN" | "DOCTOR" | "PHARMACIST"} userName={session?.user.name} userEmail={session?.user.email} />
+      <Sidebar activePath="/appointments" userRole="DOCTOR" userName="Dr. Desarrollo" userEmail="dev@mediflow.com" />
 
       <div className="ml-[240px] p-8">
         <div className="max-w-[1400px] mx-auto space-y-6">

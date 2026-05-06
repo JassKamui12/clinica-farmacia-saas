@@ -16,7 +16,7 @@ export async function GET(req: Request) {
       },
     },
     include: {
-      patient: true,
+      Patient: true,
     },
   });
 
@@ -49,7 +49,7 @@ export async function GET(req: Request) {
       },
     });
 
-    const patient = visit.patient;
+    const patient = visit.Patient;
     const phone = patient.whatsappPhone || patient.phone;
 
     if (phone && visit.treatment) {

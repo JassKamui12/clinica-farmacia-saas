@@ -19,9 +19,9 @@ const navItems: NavItem[] = [
   { href: "/consultations", icon: "medical_services", label: "Consultas", roles: ["ADMIN", "DOCTOR"] },
   { href: "/triage", icon: "emergency", label: "Triage IA", roles: ["ADMIN", "DOCTOR"] },
   { href: "/followups", icon: "monitor_heart", label: "Seguimiento", roles: ["ADMIN", "DOCTOR"] },
-  { href: "/prescriptions", icon: "medication", label: "Recetas", roles: ["ADMIN", "DOCTOR", "PHARMACIST"] },
-  { href: "/inventory", icon: "inventory_2", label: "Inventario", roles: ["ADMIN", "PHARMACIST"] },
-  { href: "/pharmacist", icon: "local_pharmacy", label: "Panel Farmacia", roles: ["PHARMACIST"] },
+  { href: "/prescriptions", icon: "medication", label: "Recetas", roles: ["ADMIN", "DOCTOR"] },
+   { href: "/inventory", icon: "inventory_2", label: "Inventario", roles: ["ADMIN", "PHARMACIST"] },
+   { href: "/pharmacist", icon: "local_pharmacy", label: "Panel Farmacia", roles: ["PHARMACIST"] },
   { href: "/whatsapp", icon: "chat", label: "WhatsApp", roles: ["ADMIN", "DOCTOR", "PHARMACIST"] },
   { href: "/admin", icon: "settings", label: "Administración", roles: ["ADMIN"] },
 ];

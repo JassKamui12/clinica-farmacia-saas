@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcrypt";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { randomUUID } from "crypto";
 
 const registerSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -14,12 +15,10 @@ const registerSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    console.log("Register request body:", { ...body, password: "***" });
 
     const validation = registerSchema.safeParse(body);
 
     if (!validation.success) {
-      console.log("Validation error:", validation.error.issues);
       return NextResponse.json(
         { error: "Datos inválidos", details: validation.error.issues },
         { status: 400 }
@@ -37,15 +36,16 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await hash(password, 12);
-    console.log("Password hashed successfully");
 
     const user = await prisma.user.create({
       data: {
+        id: crypto.randomUUID(),
         email,
         passwordHash,
         name,
         role,
         whatsappPhone: whatsappPhone || null,
+        updatedAt: new Date(),
       },
       select: {
         id: true,
@@ -57,11 +57,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log("User created:", user.id);
     return NextResponse.json(user, { status: 201 });
   } catch (error: any) {
     console.error("Register error:", error);
-    console.error("Error stack:", error.stack);
     return NextResponse.json(
       { error: error.message || "Error interno del servidor" },
       { status: 500 }

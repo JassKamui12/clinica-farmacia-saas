@@ -16,15 +16,15 @@ export async function GET(req: Request) {
       nextCheckIn: { lte: now },
     },
     include: {
-      patient: true,
-      prescription: true,
+      Patient: true,
+      Prescription: true,
     },
   });
 
   const results = [];
 
   for (const followUp of dueFollowUps) {
-    const patient = followUp.patient;
+    const patient = followUp.Patient;
     const phone = patient.whatsappPhone || patient.phone;
 
     if (!phone) {
@@ -36,7 +36,7 @@ export async function GET(req: Request) {
       continue;
     }
 
-    const medication = followUp.prescription?.productName || "tu tratamiento";
+    const medication = followUp.Prescription?.productName || "tu tratamiento";
 
     const body = `📋 *Seguimiento de Tratamiento*\n\nHola ${patient.name}, ¿cómo te sientes con ${medication}?\n\nResponde:\n1️⃣ Todo bien, sin problemas\n2️⃣ Molestias leves\n3️⃣ Efectos adversos\n4️⃣ No he podido tomarlo`;
 

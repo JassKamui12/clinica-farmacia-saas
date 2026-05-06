@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   const prescriptions = await prisma.prescription.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    include: { patient: true, doctor: true },
+    include: { Patient: true, User: true },
   });
 
   return NextResponse.json(prescriptions);
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
 
   const prescription = await prisma.prescription.create({
     data: {
-      patient: { connect: { id: body.patientId } },
-      doctor: { connect: { id: doctor?.id ?? (await getDefaultDoctor()).id } },
+      Patient: { connect: { id: body.patientId } },
+      User: { connect: { id: doctor?.id ?? (await getDefaultDoctor()).id } },
       productName: body.productName,
       dosage: body.dosage,
       instructions: body.instructions,

@@ -74,16 +74,16 @@ export async function POST(request: NextRequest) {
         redFlags: triageData.redFlags || null,
         suggestedQuestions: triageData.suggestedQuestions || null,
       },
-      include: {
-        patient: { select: { name: true, whatsappPhone: true } },
-      },
+       include: {
+         Patient: { select: { name: true, whatsappPhone: true } },
+       },
     });
 
     if (triageData.urgency === "EMERGENCY" || triageData.urgency === "HIGH") {
       await prisma.notification.create({
         data: {
           title: `🚨 Triage ${triageData.urgency === "EMERGENCY" ? "EMERGENCIA" : "URGENTE"}`,
-          content: `Paciente ${report.patient?.name || phone}: ${triageData.summary}`,
+          content: `Paciente ${report.Patient?.name || phone}: ${triageData.summary}`,
           channel: "in_app",
           role: "DOCTOR",
         },
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ...triageData,
       reportId: report.id,
-      patientName: report.patient?.name,
+      patientName: report.Patient?.name,
     });
   } catch (error: any) {
     console.error("Triage API Error:", error);
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: "desc" },
     take: limit,
     include: {
-      patient: { select: { name: true, whatsappPhone: true } },
+      Patient: { select: { name: true, whatsappPhone: true } },
     },
   });
 

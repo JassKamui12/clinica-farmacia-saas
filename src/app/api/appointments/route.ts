@@ -55,8 +55,8 @@ export async function GET(req: NextRequest) {
   const appointments = await prisma.appointment.findMany({
     where,
     include: {
-      patient: { select: { id: true, name: true, whatsappPhone: true, phone: true, email: true } },
-      doctor: { select: { id: true, name: true, email: true } },
+      Patient: { select: { id: true, name: true, whatsappPhone: true, phone: true, email: true } },
+      User: { select: { id: true, name: true, email: true } },
     },
     orderBy: [{ date: "asc" }, { time: "asc" }],
   });
@@ -121,8 +121,8 @@ export async function POST(req: NextRequest) {
       notes: notes || null,
     },
     include: {
-      patient: { select: { name: true, whatsappPhone: true } },
-      doctor: { select: { name: true, email: true } },
+      Patient: { select: { name: true, whatsappPhone: true } },
+      User: { select: { name: true, email: true } },
     },
   });
 
@@ -155,8 +155,8 @@ export async function PATCH(req: NextRequest) {
       ...(status === "CONFIRMED" ? { whatsappConfirmed: true } : {}),
     },
     include: {
-      patient: { select: { name: true, whatsappPhone: true } },
-      doctor: { select: { name: true } },
+      Patient: { select: { name: true, whatsappPhone: true } },
+      User: { select: { name: true } },
     },
   });
 

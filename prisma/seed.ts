@@ -1,7 +1,3 @@
-import { config } from "dotenv";
-import { resolve } from "path";
-config({ path: resolve(__dirname, "../.env") });
-
 import { PrismaClient } from "../src/generated/prisma/client";
 import { hash } from "bcrypt";
 
@@ -32,41 +28,49 @@ async function main() {
 
   const admin = await prisma.user.create({
     data: {
+      id: "admin-001",
       email: "admin@clinica.com",
       passwordHash: adminHash,
       name: "Admin Principal",
       role: "ADMIN",
       whatsappPhone: "+50688888888",
+      updatedAt: new Date(),
     },
   });
 
   const doctor1 = await prisma.user.create({
     data: {
+      id: "doctor-001",
       email: "doctor@clinica.com",
       passwordHash: doctorHash,
       name: "Dra. María González",
       role: "DOCTOR",
       whatsappPhone: "+50688888889",
+      updatedAt: new Date(),
     },
   });
 
   const doctor2 = await prisma.user.create({
     data: {
+      id: "doctor-002",
       email: "doctor2@clinica.com",
       passwordHash: doctorHash,
       name: "Dr. Carlos Ramírez",
       role: "DOCTOR",
       whatsappPhone: "+50688888890",
+      updatedAt: new Date(),
     },
   });
 
   const pharmacist = await prisma.user.create({
     data: {
+      id: "pharmacist-001",
       email: "farmacia@clinica.com",
       passwordHash: pharmHash,
       name: "Lic. Ana Mora",
       role: "PHARMACIST",
       whatsappPhone: "+50688888891",
+      updatedAt: new Date(),
     },
   });
 

@@ -36,7 +36,7 @@ model AiRecommendation {
 }
 
 model Appointment {
-  id                  String            @id
+  id                  String            @id @default(cuid())
   patientId           String
   doctorId            String
   date                DateTime
@@ -48,7 +48,7 @@ model Appointment {
   whatsappReminder1h  Boolean           @default(false)
   whatsappConfirmed   Boolean           @default(false)
   createdAt           DateTime          @default(now())
-  updatedAt           DateTime
+  updatedAt           DateTime          @updatedAt
   User                User              @relation(fields: [doctorId], references: [id])
   Patient             Patient           @relation(fields: [patientId], references: [id])
 
@@ -56,11 +56,10 @@ model Appointment {
   @@index([date, time])
   @@index([doctorId])
   @@index([patientId])
-  @@index([status])
 }
 
 model ClinicalVisit {
-  id        String   @id
+  id        String   @id @default(cuid())
   patientId String
   doctorId  String
   visitDate DateTime @default(now())
@@ -68,9 +67,10 @@ model ClinicalVisit {
   diagnosis String?
   treatment String?
   notes     String?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   User      User     @relation(fields: [doctorId], references: [id])
-  Patient   Patient  @relation(fields: [patientId], references: [id])
+  Patient   Patient   @relation(fields: [patientId], references: [id])
 
   @@index([doctorId])
   @@index([patientId])
@@ -78,7 +78,7 @@ model ClinicalVisit {
 }
 
 model Notification {
-  id                String    @id
+  id                String    @id @default(cuid())
   title             String
   content           String
   channel           String    @default("in_app")
@@ -90,11 +90,12 @@ model Notification {
   sentAt            DateTime?
   read              Boolean   @default(false)
   createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
   User              User?     @relation(fields: [userId], references: [id])
 
-  @@index([channel])
-  @@index([read])
   @@index([userId])
+  @@index([role])
+  @@index([read])
 }
 
 model Patient {
@@ -120,7 +121,7 @@ model Patient {
 }
 
 model PatientFollowUp {
-  id             String         @id
+  id             String         @id @default(cuid())
   patientId      String
   prescriptionId String?        @unique
   startDate      DateTime
@@ -133,7 +134,7 @@ model PatientFollowUp {
   alertTriggered Boolean        @default(false)
   alertReason    String?
   createdAt      DateTime       @default(now())
-  updatedAt      DateTime
+  updatedAt      DateTime       @updatedAt
   Patient        Patient        @relation(fields: [patientId], references: [id])
   Prescription   Prescription?  @relation(fields: [prescriptionId], references: [id])
 
@@ -144,7 +145,7 @@ model PatientFollowUp {
 }
 
 model PharmacyProduct {
-  id                String   @id
+  id                String   @id @default(cuid())
   name              String
   category          String?
   indications       String?
@@ -153,32 +154,32 @@ model PharmacyProduct {
   stock             Int      @default(0)
   isAvailable       Boolean  @default(true)
   createdAt         DateTime @default(now())
-  updatedAt         DateTime
+  updatedAt         DateTime  @updatedAt
 
   @@index([category])
 }
 
 model Prescription {
-  id              String                    @id
+  id              String                    @id @default(cuid())
   patientId       String
   doctorId        String
   createdAt       DateTime                  @default(now())
-  updatedAt       DateTime
+  updatedAt       DateTime                  @updatedAt
   notes           String?
   productName     String
   dosage          String?
   instructions    String?
-  whatsappSent    Boolean                   @default(false)
-  billingStatus   PrescriptionBillingStatus @default(PENDING)
-  totalPrice      Float                     @default(0)
-  quantity        Int                       @default(1)
+  quantity        Int                     @default(1)
+  totalPrice      Int                     @default(0)
+  billingStatus  PrescriptionBillingStatus @default(PENDING)
+  whatsappSent   Boolean                  @default(false)
+  Patient         Patient        @relation(fields: [patientId], references: [id])
+  User            User           @relation(fields: [doctorId], references: [id])
   PatientFollowUp PatientFollowUp?
-  User            User                      @relation(fields: [doctorId], references: [id])
-  Patient         Patient                   @relation(fields: [patientId], references: [id])
 
-  @@index([billingStatus])
-  @@index([doctorId])
   @@index([patientId])
+  @@index([doctorId])
+  @@index([billingStatus])
 }
 
 model Session {
@@ -187,10 +188,11 @@ model Session {
   userId       String
   expires      DateTime
   User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 model TriageReport {
-  id                 String        @id
+  id                 String        @id @default(cuid())
   patientId          String?
   phone              String
   symptoms           String
@@ -200,20 +202,20 @@ model TriageReport {
   aiConfidence       Float         @default(0)
   redFlags           String?
   suggestedQuestions String?
-  createdAt          DateTime      @default(now())
   reviewedAt         DateTime?
   reviewedBy         String?
-  Patient            Patient?      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  Patient            Patient?       @relation(fields: [patientId], references: [id])
 
   @@index([createdAt])
-  @@index([patientId])
-  @@index([phone])
   @@index([status])
   @@index([urgency])
+  @@index([patientId])
 }
 
 model User {
-  id            String          @id
+  id            String          @id @default(cuid())
   email         String          @unique
   emailVerified DateTime?
   passwordHash  String?
@@ -221,7 +223,7 @@ model User {
   role          UserRole        @default(ADMIN)
   whatsappPhone String?
   createdAt     DateTime        @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime        @updatedAt
   Account       Account[]
   Appointment   Appointment[]
   ClinicalVisit ClinicalVisit[]
