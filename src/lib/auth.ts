@@ -2,11 +2,10 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcrypt";
 import { prisma } from "@/lib/prisma";
-import { decode } from "next-auth/jwt";
-import { cookies } from "next/headers";
+import type { NextAuthOptions } from "next-auth";
+import { getServerSession } from "next-auth/next";
 
-export const authOptions = {
-  adapter: require("@auth/prisma-adapter").PrismaAdapter(prisma),
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -47,7 +46,7 @@ export const authOptions = {
     }),
   ],
   session: {
-    strategy: "jwt" as any,
+    strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
   },
   callbacks: {
@@ -61,9 +60,9 @@ export const authOptions = {
     },
     async session({ session, token }: any) {
       if (token && session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.whatsappPhone = token.whatsappPhone;
+        (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
+        (session.user as any).whatsappPhone = token.whatsappPhone;
       }
       return session;
     },
@@ -84,22 +83,8 @@ export type SessionUser = {
   image?: string | null;
 };
 
-export async function auth(): Promise<(any & { user: SessionUser }) | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("next-auth.session-token")?.value 
-    || cookieStore.get("__Secure-next-auth.session-token")?.value;  
-  
-  if (!token) return null;
-  
-  try {
-    const decoded = await decode({
-      token,
-      secret: process.env.NEXTAUTH_SECRET!,
-    });
-    return decoded as any;
-  } catch {
-    return null;
-  }
+export async function auth() {
+  return await getServerSession(authOptions);
 }
 
-export default NextAuth(authOptions as any);
+export default NextAuth(authOptions);
