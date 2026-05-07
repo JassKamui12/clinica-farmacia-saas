@@ -77,45 +77,53 @@ async function main() {
   console.log("👥 Creando pacientes...");
   const patient1 = await prisma.patient.create({
     data: {
+      id: "patient-001",
       name: "Juan Pérez",
       phone: "+50687654321",
       whatsappPhone: "+50687654321",
       email: "juan@email.com",
       dateOfBirth: new Date("1985-03-15"),
       gender: "Masculino",
+      updatedAt: new Date(),
     },
   });
 
   const patient2 = await prisma.patient.create({
     data: {
+      id: "patient-002",
       name: "María López",
       phone: "+50687654322",
       whatsappPhone: "+50687654322",
       email: "maria@email.com",
       dateOfBirth: new Date("1990-07-22"),
       gender: "Femenino",
+      updatedAt: new Date(),
     },
   });
 
   const patient3 = await prisma.patient.create({
     data: {
+      id: "patient-003",
       name: "Pedro Sánchez",
       phone: "+50687654323",
       whatsappPhone: "+50687654323",
       email: "pedro@email.com",
       dateOfBirth: new Date("1978-11-08"),
       gender: "Masculino",
+      updatedAt: new Date(),
     },
   });
 
   const patient4 = await prisma.patient.create({
     data: {
+      id: "patient-004",
       name: "Sofía Herrera",
       phone: "+50687654324",
       whatsappPhone: "+50687654324",
       email: "sofia@email.com",
       dateOfBirth: new Date("1995-01-30"),
       gender: "Femenino",
+      updatedAt: new Date(),
     },
   });
 

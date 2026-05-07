@@ -28,7 +28,7 @@ model Account {
 }
 
 model AiRecommendation {
-  id        String   @id
+  id        String   @id @default(cuid())
   role      String   @default("medico")
   prompt    String
   response  String
@@ -99,7 +99,7 @@ model Notification {
 }
 
 model Patient {
-  id              String            @id
+  id              String            @id @default(cuid())
   name            String
   phone           String?
   email           String?
@@ -108,7 +108,7 @@ model Patient {
   gender          String?
   notes           String?
   createdAt       DateTime          @default(now())
-  updatedAt       DateTime
+  updatedAt       DateTime          @updatedAt
   Appointment     Appointment[]
   ClinicalVisit   ClinicalVisit[]
   PatientFollowUp PatientFollowUp[]
@@ -183,7 +183,7 @@ model Prescription {
 }
 
 model Session {
-  id           String   @id
+  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -236,7 +236,7 @@ model User {
 }
 
 model WhatsAppMessage {
-  id           String           @id
+  id           String           @id @default(cuid())
   patientId    String?
   phone        String
   direction    MessageDirection
@@ -259,14 +259,14 @@ model WhatsAppMessage {
 }
 
 model WhatsAppSession {
-  id            String   @id
+  id            String   @id @default(cuid())
   phone         String   @unique
   currentIntent String?
   step          String   @default("menu")
   contextData   String
   expiresAt     DateTime
   createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime @updatedAt
 
   @@index([expiresAt])
   @@index([phone])
