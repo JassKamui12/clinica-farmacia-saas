@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import ClientProviders from "@/components/ClientProviders";
 import "./globals.css";
 
@@ -22,6 +23,7 @@ export default function RootLayout({
       </head>
       <body className="bg-background text-on-background font-sans antialiased">
         <ClientProviders>{children}</ClientProviders>
+        <SpeedInsights />
       </body>
     </html>
   );
