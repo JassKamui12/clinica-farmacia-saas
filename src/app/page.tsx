@@ -121,12 +121,19 @@ export default function HomePage() {
   }, [status]);
 
   useEffect(() => {
-    loadNotifications(selectedRole);
-  }, [selectedRole]);
+    if (status === "authenticated") {
+      loadNotifications(selectedRole);
+    }
+  }, [selectedRole, status]);
 
   async function loadNotifications(role: UserRole) {
-    const res = await fetch(`/api/notifications?role=${role}`);
-    setNotifications(await res.json());
+    try {
+      const res = await fetch(`/api/notifications?role=${role}`);
+      if (!res.ok) return;
+      setNotifications(await res.json());
+    } catch {
+      // silently ignore notification fetch failures
+    }
   }
 
   async function loadData() {
