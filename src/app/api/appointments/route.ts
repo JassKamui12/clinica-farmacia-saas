@@ -61,7 +61,9 @@ export async function GET(req: NextRequest) {
     orderBy: [{ date: "asc" }, { time: "asc" }],
   });
 
-  return NextResponse.json(appointments);
+  return NextResponse.json(
+    appointments.map(({ Patient, User, ...rest }) => ({ ...rest, patient: Patient, doctor: User }))
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -126,7 +128,8 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json(appointment, { status: 201 });
+  const { Patient, User, ...apptRest } = appointment;
+  return NextResponse.json({ ...apptRest, patient: Patient, doctor: User }, { status: 201 });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -160,7 +163,8 @@ export async function PATCH(req: NextRequest) {
     },
   });
 
-  return NextResponse.json(appointment);
+  const { Patient, User, ...apptRest } = appointment;
+  return NextResponse.json({ ...apptRest, patient: Patient, doctor: User });
 }
 
 export async function DELETE(req: NextRequest) {

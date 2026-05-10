@@ -45,7 +45,9 @@ export async function GET(req: NextRequest) {
     orderBy: { nextCheckIn: "asc" },
   });
 
-  return NextResponse.json(followUps);
+  return NextResponse.json(
+    followUps.map(({ Patient, Prescription, ...rest }) => ({ ...rest, patient: Patient, prescription: Prescription }))
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -81,7 +83,8 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json(followUp, { status: 201 });
+  const { Patient, Prescription, ...fuRest } = followUp;
+  return NextResponse.json({ ...fuRest, patient: Patient, prescription: Prescription }, { status: 201 });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -119,7 +122,8 @@ export async function PATCH(req: NextRequest) {
     },
   });
 
-  return NextResponse.json(followUp);
+  const { Patient, Prescription, ...fuRest } = followUp;
+  return NextResponse.json({ ...fuRest, patient: Patient, prescription: Prescription });
 }
 
 export async function DELETE(req: NextRequest) {

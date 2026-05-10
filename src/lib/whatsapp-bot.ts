@@ -175,7 +175,7 @@ async function handleAgendarCita(phone: string, session: BotSession, input: stri
       const preferredDate = context["preferredDate"] || "";
       const preferredTime = context.preferredTime;
 
-      const result = await useAItoFindDoctor(preferredDate, preferredTime);
+      const result = await findDoctorForAppointment(preferredDate, preferredTime);
 
       if (result.doctorId) {
         await updateSession(session.id, {
@@ -564,7 +564,7 @@ async function handleUnknownIntent(phone: string, input: string) {
   }
 }
 
-async function useAItoFindDoctor(date: string, time: string) {
+async function findDoctorForAppointment(date: string, time: string) {
   const doctors = await prisma.user.findMany({
     where: { role: "DOCTOR" },
     select: { id: true, name: true, email: true },

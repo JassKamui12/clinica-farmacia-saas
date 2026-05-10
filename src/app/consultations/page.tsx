@@ -148,7 +148,7 @@ export default function ConsultationsPage() {
       setMessage("✅ Consulta guardada");
       setSymptoms(""); setDiagnosis(""); setTreatment(""); setVisitNotes("");
       loadPatientHistory(selectedPatientId);
-      if (showPrescription) {
+      if (!showPrescription) {
         setShowConsultationForm(false);
       }
     }
@@ -192,7 +192,7 @@ export default function ConsultationsPage() {
 
   return (
     <main className="min-h-screen bg-[#0A0C10] text-slate-200">
-      <Sidebar activePath="/consultations" userRole="DOCTOR" userName="Dr. Desarrollo" userEmail="dev@mediflow.com" />
+      <Sidebar activePath="/consultations" userRole={session?.user.role as "ADMIN" | "DOCTOR" | "PHARMACIST"} userName={session?.user.name} userEmail={session?.user.email} />
 
       <div className="ml-[240px] p-8">
         <div className="max-w-[1400px] mx-auto space-y-6">

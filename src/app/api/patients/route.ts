@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { prisma } from "../../../lib/prisma";
 import { z } from "zod";
-import { randomUUID } from "crypto";
 
 const createPatientSchema = z.object({
   name: z.string().min(2, "Nombre requerido (min 2 caracteres)"),
@@ -24,6 +24,9 @@ const updatePatientSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search");
 
@@ -39,6 +42,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   try {
     const body = await request.json();
     const validation = createPatientSchema.safeParse(body);
@@ -71,6 +77,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   try {
     const body = await request.json();
     const { id, ...updateData } = body;
@@ -104,6 +113,9 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

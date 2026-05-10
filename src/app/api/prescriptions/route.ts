@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { prisma } from "../../../lib/prisma";
 
 const DEFAULT_DOCTOR_EMAIL = "doctor@clinica.local";
@@ -16,7 +17,14 @@ async function getDefaultDoctor() {
   });
 }
 
+function mapPrescription({ Patient, User, ...rest }: any) {
+  return { ...rest, patient: Patient, doctor: User };
+}
+
 export async function GET(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
 
@@ -29,10 +37,13 @@ export async function GET(request: NextRequest) {
     include: { Patient: true, User: true },
   });
 
-  return NextResponse.json(prescriptions);
+  return NextResponse.json(prescriptions.map(mapPrescription));
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const body = await request.json();
 
   if (!body.patientId || !body.productName) {
@@ -57,6 +68,7 @@ export async function POST(request: NextRequest) {
       quantity: body.quantity || 1,
       totalPrice: body.totalPrice || 0,
     },
+    include: { Patient: true, User: true },
   });
 
   await prisma.notification.create({
@@ -68,10 +80,13 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  return NextResponse.json(prescription, { status: 201 });
+  return NextResponse.json(mapPrescription(prescription), { status: 201 });
 }
 
 export async function PATCH(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const body = await request.json();
 
   if (!body.id) {
