@@ -12,16 +12,21 @@ interface NavItem {
   roles: UserRole[];
 }
 
-const navItems: NavItem[] = [
-  { href: "/", icon: "dashboard", label: "Dashboard", roles: ["ADMIN", "DOCTOR", "PHARMACIST"] },
+const roleDashboard: Record<UserRole, string> = {
+  ADMIN: "/admin",
+  DOCTOR: "/doctor",
+  PHARMACIST: "/pharmacist",
+};
+
+const baseNavItems: NavItem[] = [
   { href: "/patients", icon: "person", label: "Pacientes", roles: ["ADMIN", "DOCTOR"] },
   { href: "/appointments", icon: "calendar_month", label: "Citas", roles: ["ADMIN", "DOCTOR"] },
   { href: "/consultations", icon: "medical_services", label: "Consultas", roles: ["ADMIN", "DOCTOR"] },
   { href: "/triage", icon: "emergency", label: "Triage IA", roles: ["ADMIN", "DOCTOR"] },
   { href: "/followups", icon: "monitor_heart", label: "Seguimiento", roles: ["ADMIN", "DOCTOR"] },
   { href: "/prescriptions", icon: "medication", label: "Recetas", roles: ["ADMIN", "DOCTOR"] },
-   { href: "/inventory", icon: "inventory_2", label: "Inventario", roles: ["ADMIN", "PHARMACIST"] },
-   { href: "/pharmacist", icon: "local_pharmacy", label: "Panel Farmacia", roles: ["PHARMACIST"] },
+  { href: "/inventory", icon: "inventory_2", label: "Inventario", roles: ["ADMIN", "PHARMACIST"] },
+  { href: "/pharmacist", icon: "local_pharmacy", label: "Panel Farmacia", roles: ["PHARMACIST"] },
   { href: "/whatsapp", icon: "chat", label: "WhatsApp", roles: ["ADMIN", "DOCTOR", "PHARMACIST"] },
   { href: "/admin", icon: "settings", label: "Administración", roles: ["ADMIN"] },
 ];
@@ -34,7 +39,9 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activePath, userRole, userName, userEmail }: SidebarProps) {
-  const visibleItems = navItems.filter((item) => item.roles.includes(userRole));
+  const dashboardHref = roleDashboard[userRole];
+  const dashboardItem: NavItem = { href: dashboardHref, icon: "dashboard", label: "Dashboard", roles: [userRole] };
+  const visibleItems = [dashboardItem, ...baseNavItems.filter((item) => item.roles.includes(userRole))];
   const roleLabels: Record<UserRole, string> = {
     ADMIN: "Administrador",
     DOCTOR: "Médico",
