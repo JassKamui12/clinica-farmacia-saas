@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path . -File)",
+      "Bash(Select-Object Name)",
+      "Bash(npm run *)",
+      "Bash(npx prisma *)",
+      "Bash(npx next *)",
+      "Bash(node_modules\\\\.bin\\\\next --version)",
+      "Bash(node_modules\\\\.bin\\\\prisma --version)",
+      "PowerShell(cd \"c:\\\\Users\\\\AlejandroSolorzano\\\\Documentos\\\\clinica-farmacia-saas\"; [System.IO.Directory]::GetFiles\\(\"node_modules\\\\.bin\"\\) | Select-Object -First 20)",
+      "PowerShell(cd \"c:\\\\Users\\\\AlejandroSolorzano\\\\Documentos\\\\clinica-farmacia-saas\"; $result = cmd /c \"dir node_modules\\\\.bin\\\\ /b 2>&1\"; Write-Host \"Items: $\\($result.Count\\)\"; $result | Select-Object -First 30 | ForEach-Object { Write-Host $_ })",
+      "PowerShell(cd \"c:\\\\Users\\\\AlejandroSolorzano\\\\Documentos\\\\clinica-farmacia-saas\"; $result = cmd /c \"dir node_modules\\\\.bin\\\\ /b 2>&1\"; Write-Host \"Bin count: $\\($result.Count\\)\"; $result | Where-Object { $_ -match \"next|prisma\" } | ForEach-Object { Write-Host $_ })",
+      "PowerShell(netstat -ano)"
+    ]
+  }
+}

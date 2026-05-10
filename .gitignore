@@ -5,3 +5,4 @@ out
 .DS_Store
 prisma/dev.db
 src/generated
+.vercel
