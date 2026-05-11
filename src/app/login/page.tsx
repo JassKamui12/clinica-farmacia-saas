@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
@@ -13,7 +12,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -32,10 +30,7 @@ export default function LoginPage() {
       return;
     }
 
-    // Esperar a que la sesión se establezca
-    await new Promise(resolve => setTimeout(resolve, 500));
-    router.push("/");
-    router.refresh();
+    window.location.href = "/";
   }
 
   async function handleRegister(e: React.FormEvent) {
