@@ -9,6 +9,48 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ── Clínica / tenant ──────────────────────────────────────────────────────────
+model Clinic {
+  id                  String        @id @default(cuid())
+  name                String
+  type                ClinicType    @default(MEDICAL)
+  slug                String        @unique
+  address             String?
+  city                String?
+  country             String        @default("HN")
+  phone               String?
+  isActive            Boolean       @default(true)
+
+  // WhatsApp Business config (por clínica)
+  waPhoneNumberId     String?       // Meta phone_number_id — identifica el número
+  waAccessToken       String?       // Meta access token
+  waVerifyToken       String?
+
+  // Configuración de IA (por clínica — sobreescribe global)
+  aiProvider          String?       // "anthropic" | "groq" | "openai" | "deepseek"
+  aiModel             String?
+  aiApiKey            String?
+  aiName              String        @default("Asistente")
+  aiSystemPrompt      String?       // prompt personalizado (opcional)
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  users               User[]
+  patients            Patient[]
+  appointments        Appointment[]
+  clinicalVisits      ClinicalVisit[]
+  prescriptions       Prescription[]
+  patientFollowUps    PatientFollowUp[]
+  pharmacyProducts    PharmacyProduct[]
+  notifications       Notification[]
+  whatsappMessages    WhatsAppMessage[]
+  whatsappSessions    WhatsAppSession[]
+
+  @@index([waPhoneNumberId])
+  @@map("clinics")
+}
+
 model Account {
   id                String  @id
   userId            String
@@ -37,6 +79,7 @@ model AiRecommendation {
 
 model Appointment {
   id                  String            @id @default(cuid())
+  clinicId            String?
   patientId           String
   doctorId            String
   date                DateTime
@@ -49,6 +92,7 @@ model Appointment {
   whatsappConfirmed   Boolean           @default(false)
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
+  Clinic              Clinic?           @relation(fields: [clinicId], references: [id])
   User                User              @relation(fields: [doctorId], references: [id])
   Patient             Patient           @relation(fields: [patientId], references: [id])
 
@@ -60,6 +104,7 @@ model Appointment {
 
 model ClinicalVisit {
   id        String   @id @default(cuid())
+  clinicId  String?
   patientId String
   doctorId  String
   visitDate DateTime @default(now())
@@ -69,6 +114,7 @@ model ClinicalVisit {
   notes     String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  Clinic    Clinic?   @relation(fields: [clinicId], references: [id])
   User      User     @relation(fields: [doctorId], references: [id])
   Patient   Patient   @relation(fields: [patientId], references: [id])
 
@@ -79,6 +125,7 @@ model ClinicalVisit {
 
 model Notification {
   id                String    @id @default(cuid())
+  clinicId          String?
   title             String
   content           String
   channel           String    @default("in_app")
@@ -91,6 +138,7 @@ model Notification {
   read              Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+  Clinic            Clinic?   @relation(fields: [clinicId], references: [id])
   User              User?     @relation(fields: [userId], references: [id])
 
   @@index([userId])
@@ -100,15 +148,19 @@ model Notification {
 
 model Patient {
   id              String            @id @default(cuid())
+  clinicId        String?
   name            String
   phone           String?
   email           String?
   whatsappPhone   String?
   dateOfBirth     DateTime?
   gender          String?
+  bloodType       String?
+  allergies       String?
   notes           String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+  Clinic          Clinic?           @relation(fields: [clinicId], references: [id])
   Appointment     Appointment[]
   ClinicalVisit   ClinicalVisit[]
   PatientFollowUp PatientFollowUp[]
@@ -122,6 +174,7 @@ model Patient {
 
 model PatientFollowUp {
   id             String         @id @default(cuid())
+  clinicId       String?
   patientId      String
   prescriptionId String?        @unique
   startDate      DateTime
@@ -135,6 +188,7 @@ model PatientFollowUp {
   alertReason    String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  Clinic         Clinic?        @relation(fields: [clinicId], references: [id])
   Patient        Patient        @relation(fields: [patientId], references: [id])
   Prescription   Prescription?  @relation(fields: [prescriptionId], references: [id])
 
@@ -146,6 +200,7 @@ model PatientFollowUp {
 
 model PharmacyProduct {
   id                String   @id @default(cuid())
+  clinicId          String?
   name              String
   category          String?
   indications       String?
@@ -155,12 +210,15 @@ model PharmacyProduct {
   isAvailable       Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime  @updatedAt
+  Clinic            Clinic?  @relation(fields: [clinicId], references: [id])
 
   @@index([category])
+  @@index([clinicId])
 }
 
 model Prescription {
   id              String                    @id @default(cuid())
+  clinicId        String?
   patientId       String
   doctorId        String
   createdAt       DateTime                  @default(now())
@@ -173,6 +231,7 @@ model Prescription {
   totalPrice      Int                     @default(0)
   billingStatus  PrescriptionBillingStatus @default(PENDING)
   whatsappSent   Boolean                  @default(false)
+  Clinic          Clinic?        @relation(fields: [clinicId], references: [id])
   Patient         Patient        @relation(fields: [patientId], references: [id])
   User            User           @relation(fields: [doctorId], references: [id])
   PatientFollowUp PatientFollowUp?
@@ -216,14 +275,17 @@ model TriageReport {
 
 model User {
   id            String          @id @default(cuid())
+  clinicId      String?
   email         String          @unique
   emailVerified DateTime?
   passwordHash  String?
   name          String?
+  specialty     String?         // para doctores: "Medicina General", "Odontología", etc.
   role          UserRole        @default(ADMIN)
   whatsappPhone String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+  Clinic        Clinic?         @relation(fields: [clinicId], references: [id])
   Account       Account[]
   Appointment   Appointment[]
   ClinicalVisit ClinicalVisit[]
@@ -237,6 +299,7 @@ model User {
 
 model WhatsAppMessage {
   id           String           @id @default(cuid())
+  clinicId     String?
   patientId    String?
   phone        String
   direction    MessageDirection
@@ -249,8 +312,10 @@ model WhatsAppMessage {
   intent       String?
   sessionData  String?
   createdAt    DateTime         @default(now())
+  Clinic       Clinic?          @relation(fields: [clinicId], references: [id])
   Patient      Patient?         @relation(fields: [patientId], references: [id])
 
+  @@index([clinicId])
   @@index([createdAt])
   @@index([direction])
   @@index([patientId])
@@ -259,15 +324,20 @@ model WhatsAppMessage {
 }
 
 model WhatsAppSession {
-  id            String   @id @default(cuid())
-  phone         String   @unique
-  currentIntent String?
-  step          String   @default("menu")
-  contextData   String
-  expiresAt     DateTime
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 String    @id @default(cuid())
+  phone              String    @unique
+  clinicId           String?
+  currentIntent      String?
+  step               String    @default("menu")
+  contextData        String    @default("{}")
+  ownerTakenOver     Boolean   @default(false)
+  ownerLastMessageAt DateTime?
+  expiresAt          DateTime
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  Clinic             Clinic?   @relation(fields: [clinicId], references: [id])
 
+  @@index([clinicId])
   @@index([expiresAt])
   @@index([phone])
 }
@@ -328,8 +398,16 @@ enum TriageUrgency {
   EMERGENCY
 }
 
+enum ClinicType {
+  MEDICAL
+  DENTAL
+  PHARMACY
+  COMBINED
+}
+
 enum UserRole {
   ADMIN
   DOCTOR
   PHARMACIST
+  RECEPTIONIST
 }

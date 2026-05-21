@@ -3,7 +3,7 @@
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 
-type UserRole = "ADMIN" | "DOCTOR" | "PHARMACIST";
+type UserRole = "ADMIN" | "DOCTOR" | "PHARMACIST" | "RECEPTIONIST";
 
 interface NavItem {
   href: string;
@@ -16,17 +16,18 @@ const roleDashboard: Record<UserRole, string> = {
   ADMIN: "/admin",
   DOCTOR: "/doctor",
   PHARMACIST: "/pharmacist",
+  RECEPTIONIST: "/appointments",
 };
 
 const baseNavItems: NavItem[] = [
-  { href: "/patients", icon: "person", label: "Pacientes", roles: ["ADMIN", "DOCTOR"] },
-  { href: "/appointments", icon: "calendar_month", label: "Citas", roles: ["ADMIN", "DOCTOR"] },
+  { href: "/patients", icon: "person", label: "Pacientes", roles: ["ADMIN", "DOCTOR", "RECEPTIONIST"] },
+  { href: "/appointments", icon: "calendar_month", label: "Citas", roles: ["ADMIN", "DOCTOR", "RECEPTIONIST"] },
   { href: "/consultations", icon: "medical_services", label: "Consultas", roles: ["ADMIN", "DOCTOR"] },
   { href: "/triage", icon: "emergency", label: "Triage IA", roles: ["ADMIN", "DOCTOR"] },
   { href: "/followups", icon: "monitor_heart", label: "Seguimiento", roles: ["ADMIN", "DOCTOR"] },
   { href: "/prescriptions", icon: "medication", label: "Recetas", roles: ["ADMIN", "DOCTOR"] },
   { href: "/inventory", icon: "inventory_2", label: "Inventario", roles: ["ADMIN", "PHARMACIST"] },
-  { href: "/whatsapp", icon: "chat", label: "WhatsApp", roles: ["ADMIN", "DOCTOR", "PHARMACIST"] },
+  { href: "/whatsapp", icon: "chat", label: "WhatsApp", roles: ["ADMIN", "DOCTOR", "PHARMACIST", "RECEPTIONIST"] },
   { href: "/admin", icon: "settings", label: "Administración", roles: ["ADMIN"] },
 ];
 
@@ -45,6 +46,7 @@ export default function Sidebar({ activePath, userRole, userName, userEmail }: S
     ADMIN: "Administrador",
     DOCTOR: "Médico",
     PHARMACIST: "Farmacéutico",
+    RECEPTIONIST: "Recepcionista",
   };
 
   return (

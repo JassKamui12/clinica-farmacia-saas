@@ -41,6 +41,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           role: user.role,
           whatsappPhone: user.whatsappPhone,
+          clinicId: user.clinicId,
         };
       },
     }),
@@ -55,6 +56,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.whatsappPhone = user.whatsappPhone;
+        token.clinicId = user.clinicId;
       }
       return token;
     },
@@ -63,6 +65,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
         (session.user as any).whatsappPhone = token.whatsappPhone;
+        (session.user as any).clinicId = token.clinicId;
       }
       return session;
     },
@@ -76,7 +79,7 @@ export const authOptions: NextAuthOptions = {
 
 export type SessionUser = {
   id: string;
-  role: "ADMIN" | "DOCTOR" | "PHARMACIST";
+  role: "ADMIN" | "DOCTOR" | "PHARMACIST" | "RECEPTIONIST";
   whatsappPhone?: string | null;
   name?: string | null;
   email?: string | null;
