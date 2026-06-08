@@ -12,8 +12,12 @@ const PUBLIC_PATHS = [
   "/terms",
   "/api/auth/login",
   "/api/auth/register",
+  "/api/auth/google",     // Google OAuth initiation + callback
   "/api/whatsapp/webhook", // webhook de Meta — sin auth
 ];
+
+// Rutas que requieren auth pero NO requieren clinicId (usuarios Google recién creados)
+const NO_CLINIC_OK = ["/onboarding", "/api/auth/setup-clinic", "/api/auth/logout", "/api/auth/me"];
 
 const SUPER_ADMIN_PATHS = ["/super-admin"];
 
@@ -47,6 +51,12 @@ export async function middleware(request: NextRequest) {
 
   if (SUPER_ADMIN_PATHS.some((p) => pathname.startsWith(p)) && !session.isSuperAdmin) {
     return NextResponse.redirect(new URL("/dashboard/inicio", request.url));
+  }
+
+  // Usuario autenticado sin clínica (Google recién registrado) → solo puede ir a /onboarding
+  const noClinicOk = NO_CLINIC_OK.some((p) => pathname.startsWith(p));
+  if (!session.clinicId && !session.isSuperAdmin && !noClinicOk) {
+    return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 
   const requestHeaders = new Headers(request.headers);
