@@ -3,16 +3,30 @@ import { verifyToken } from "./lib/auth";
 
 const COOKIE_NAME = "clinica_session";
 
-const PUBLIC_PATHS = ["/login", "/register", "/api/auth/login", "/api/auth/register"];
+// Rutas que no requieren autenticación
+const PUBLIC_PATHS = [
+  "/",           // landing page
+  "/login",
+  "/register",
+  "/privacy",
+  "/terms",
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/whatsapp/webhook", // webhook de Meta — sin auth
+];
+
 const SUPER_ADMIN_PATHS = ["/super-admin"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  const isPublic = PUBLIC_PATHS.some((p) =>
+    p === "/" ? pathname === "/" : pathname.startsWith(p)
+  );
   const isStatic =
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
+    pathname.startsWith("/og-image") ||
     pathname.includes(".");
 
   if (isPublic || isStatic) return NextResponse.next();
