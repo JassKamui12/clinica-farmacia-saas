@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, botSession } from "@/lib/auth";
+import { isBotRequest } from "@/lib/botAuth";
 import { prisma } from "@/lib/prisma";
+
+async function resolveSession(req: NextRequest, clinicIdOverride?: string) {
+  if (isBotRequest(req) && clinicIdOverride) return botSession(clinicIdOverride);
+  return requireAuth();
+}
 import { z } from "zod";
 import { hash } from "bcrypt";
 
@@ -16,8 +22,9 @@ const createSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAuth();
     const { searchParams } = new URL(req.url);
+    const clinicIdParam = searchParams.get("clinicId") ?? undefined;
+    const session = await resolveSession(req, clinicIdParam);
     const role = searchParams.get("role");
 
     const where: Record<string, unknown> = {

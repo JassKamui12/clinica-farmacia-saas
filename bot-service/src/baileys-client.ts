@@ -8,10 +8,10 @@ import makeWASocket, {
 import { Boom } from "@hapi/boom";
 import * as fs from "fs";
 import pino from "pino";
+import { handleMessage } from "./bot-handler";
 
-const NEXTJS_URL = process.env.NEXTJS_URL ?? "http://localhost:3000";
-const BOT_INTERNAL_SECRET = process.env.BOT_INTERNAL_SECRET ?? "";
 const AUTH_FOLDER = process.env.AUTH_FOLDER ?? "./baileys-auth-info";
+const DEFAULT_CLINIC_ID = process.env.DEFAULT_CLINIC_ID ?? "";
 
 const logger = pino({ level: "silent" });
 
@@ -26,7 +26,7 @@ export class BaileysClient {
   private sock: ReturnType<typeof makeWASocket> | null = null;
   private status: BaileysStatus = { connected: false, state: "disconnected" };
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+  private readonly maxReconnectAttempts = 5;
 
   getStatus(): BaileysStatus {
     return this.status;
@@ -84,7 +84,7 @@ export class BaileysClient {
         if (shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
           this.reconnectAttempts++;
           const delay = Math.min(5000 * this.reconnectAttempts, 30000);
-          console.log(`[Baileys] Reintentando en ${delay / 1000}s (intento ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+          console.log(`[Baileys] Reintentando en ${delay / 1000}s (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
           setTimeout(() => this.connect(), delay);
         } else if (statusCode === DisconnectReason.loggedOut) {
           console.log("[Baileys] Sesión cerrada — borrando credenciales");
@@ -106,7 +106,7 @@ export class BaileysClient {
 
   private async handleIncomingMessage(msg: WAMessage) {
     const phone = msg.key.remoteJid?.replace("@s.whatsapp.net", "") ?? "";
-    if (!phone || phone.includes("@g.us")) return; // Skip groups
+    if (!phone || phone.includes("@g.us")) return; // skip grupos
 
     const text =
       msg.message?.conversation ??
@@ -116,24 +116,21 @@ export class BaileysClient {
     if (!text.trim()) return;
 
     const contactName = msg.pushName ?? undefined;
-    console.log(`[Baileys] Mensaje de ${phone}: ${text.substring(0, 50)}`);
+    console.log(`[Baileys] Mensaje de ${phone}: ${text.substring(0, 60)}`);
 
     try {
-      const res = await fetch(`${NEXTJS_URL}/api/whatsapp/baileys-webhook`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Internal-Secret": BOT_INTERNAL_SECRET,
-        },
-        body: JSON.stringify({ phone, message: text, contactName }),
-        signal: AbortSignal.timeout(30_000),
+      const reply = await handleMessage({
+        phone,
+        message: text,
+        clinicId: DEFAULT_CLINIC_ID,
+        contactName,
       });
 
-      if (!res.ok) {
-        console.error(`[Baileys] Error del webhook: ${res.status}`);
+      if (reply) {
+        await this.sendMessage(phone, reply);
       }
     } catch (error) {
-      console.error("[Baileys] Error enviando al webhook:", error);
+      console.error("[Baileys] Error procesando mensaje:", error);
     }
   }
 

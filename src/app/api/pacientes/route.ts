@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, botSession } from "@/lib/auth";
+import { isBotRequest } from "@/lib/botAuth";
 import { prisma } from "@/lib/prisma";
+
+async function resolveSession(req: NextRequest, clinicIdOverride?: string) {
+  if (isBotRequest(req) && clinicIdOverride) return botSession(clinicIdOverride);
+  return requireAuth();
+}
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -16,8 +22,9 @@ const createSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAuth();
     const { searchParams } = new URL(req.url);
+    const clinicIdParam = searchParams.get("clinicId") ?? undefined;
+    const session = await resolveSession(req, clinicIdParam);
     const q = searchParams.get("q") ?? "";
     const page = parseInt(searchParams.get("page") ?? "1");
     const limit = 20;
@@ -56,8 +63,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await requireAuth();
     const body = await req.json();
+    const clinicIdFromBody = typeof body.clinicId === "string" ? body.clinicId : undefined;
+    const session = await resolveSession(req, clinicIdFromBody);
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos inválidos", details: parsed.error.issues }, { status: 400 });

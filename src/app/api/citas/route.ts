@@ -1,23 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, botSession } from "@/lib/auth";
+import { isBotRequest } from "@/lib/botAuth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 const createSchema = z.object({
   patientId: z.string(),
   doctorId: z.string(),
-  date: z.string(), // ISO date string
-  time: z.string(), // "HH:MM"
+  date: z.string(),
+  time: z.string(),
   service: z.string().optional(),
   reason: z.string().optional(),
   notes: z.string().optional(),
   source: z.enum(["manual", "whatsapp", "web"]).default("manual"),
+  clinicId: z.string().optional(), // solo para bot-service
 });
+
+async function resolveSession(req: NextRequest, clinicIdOverride?: string) {
+  if (isBotRequest(req) && clinicIdOverride) return botSession(clinicIdOverride);
+  return requireAuth();
+}
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAuth();
     const { searchParams } = new URL(req.url);
+    const clinicIdParam = searchParams.get("clinicId") ?? undefined;
+    const session = await resolveSession(req, clinicIdParam);
+
     const date = searchParams.get("date");
     const doctorId = searchParams.get("doctorId");
     const status = searchParams.get("status");
@@ -58,13 +67,13 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await requireAuth();
     const body = await req.json();
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos inválidos", details: parsed.error.issues }, { status: 400 });
     }
 
+    const session = await resolveSession(req, parsed.data.clinicId);
     const { patientId, doctorId, date, time, service, reason, notes, source } = parsed.data;
 
     const cita = await prisma.appointment.create({

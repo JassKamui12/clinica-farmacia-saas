@@ -88,3 +88,14 @@ export class AuthError extends Error {
     this.name = "AuthError";
   }
 }
+
+// Sesión sintética para el bot-service (sin usuario real)
+export function botSession(clinicId: string): SessionPayload {
+  return {
+    userId: "bot-service",
+    clinicId,
+    role: "ADMIN",
+    isSuperAdmin: false,
+    tokenVersion: 0,
+  };
+}
