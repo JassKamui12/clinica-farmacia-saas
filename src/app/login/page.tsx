@@ -66,10 +66,13 @@ function LoginContent() {
   // Mostrar errores de OAuth de Google
   useEffect(() => {
     const e = searchParams.get("error");
+    const detail = searchParams.get("detail");
     if (e === "google-cancelado") setError("Inicio de sesión con Google cancelado.");
     else if (e === "google-csrf") setError("Error de seguridad. Intenta de nuevo.");
     else if (e === "google-no-configurado") setError("Google Sign-In no está configurado aún.");
-    else if (e === "google-error") setError("Error al conectar con Google. Intenta de nuevo.");
+    else if (e === "google-redirect-uri") setError("Falta configurar la URL de callback en Google Cloud Console.");
+    else if (e === "google-code-used") setError("El código de Google expiró. Intenta de nuevo.");
+    else if (e === "google-error") setError(detail ? `Error Google: ${detail}` : "Error al conectar con Google. Intenta de nuevo.");
     else if (e === "cuenta-inactiva") setError("Tu cuenta está inactiva. Contacta soporte.");
   }, [searchParams]);
 

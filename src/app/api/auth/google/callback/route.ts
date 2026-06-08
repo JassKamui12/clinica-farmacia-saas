@@ -108,8 +108,17 @@ export async function GET(req: NextRequest) {
     res.headers.append("Set-Cookie", buildSetCookieHeader(jwtToken));
     res.cookies.delete("oauth_state");
     return res;
-  } catch (err) {
-    console.error("[Google OAuth] Error:", err);
-    return NextResponse.redirect(`${appUrl}/login?error=google-error`);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[Google OAuth] Error:", msg);
+
+    // Detectar redirect_uri_mismatch específicamente
+    if (msg.includes("redirect_uri_mismatch") || msg.includes("redirect URI")) {
+      return NextResponse.redirect(`${appUrl}/login?error=google-redirect-uri`);
+    }
+    if (msg.includes("invalid_grant") || msg.includes("code was already redeemed")) {
+      return NextResponse.redirect(`${appUrl}/login?error=google-code-used`);
+    }
+    return NextResponse.redirect(`${appUrl}/login?error=google-error&detail=${encodeURIComponent(msg.slice(0, 80))}`);
   }
 }
