@@ -1,63 +1,77 @@
-const PROBLEMS = [
+const BEFORE_AFTER = [
   {
-    icon: "phone_missed",
-    title: "Pierdes pacientes mientras atiendes",
-    desc: "Cuando estás en consulta, no puedes responder WhatsApp. Los pacientes escriben a la competencia.",
+    before: { icon: "phone_missed",  text: "Los pacientes escriben mientras operas. Sin respuesta, se van a otra clínica." },
+    after:  { icon: "smart_toy",     text: "El bot responde en segundos, las 24 horas. Ningún mensaje sin respuesta." },
   },
   {
-    icon: "schedule",
-    title: "Anotas citas en libretas o Excel",
-    desc: "Los doble-libros, las citas olvidadas y los no-shows cuestan tiempo y dinero.",
+    before: { icon: "book_5",        text: "Las citas en libreta o Excel generan doble-libros y confusión." },
+    after:  { icon: "calendar_month",text: "El sistema verifica disponibilidad en tiempo real. Sin colisiones." },
   },
   {
-    icon: "person_off",
-    title: "No tienes recepcionista 24/7",
-    desc: "Fuera de horario, los pacientes quedan sin respuesta. Pierdes clientes incluso cuando estás dormido.",
+    before: { icon: "person_off",    text: "Sin recepcionista nocturna, los pacientes quedan sin atención." },
+    after:  { icon: "support_agent", text: "El bot trabaja de noche, fines de semana y feriados sin costo extra." },
   },
   {
-    icon: "sms_failed",
-    title: "Olvidas mandar recordatorios",
-    desc: "Los pacientes no se presentan porque nadie les recordó. El 30% de las inasistencias se evitan con un mensaje.",
+    before: { icon: "notifications_off", text: "Los pacientes olvidan sus citas. Inasistencias que nadie recordó evitar." },
+    after:  { icon: "notifications_active", text: "Recordatorios automáticos 24h y 2h antes por WhatsApp." },
   },
 ];
 
 export function ProblemSection() {
   return (
-    <section className="py-20 bg-slate-50">
+    <section className="py-24 bg-white">
       <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center mb-12">
-          <span className="inline-block text-sm font-semibold text-red-600 bg-red-50 px-3 py-1 rounded-full mb-4 border border-red-100">
-            El problema de hoy
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
-            Tu clínica pierde pacientes<br className="hidden sm:block" /> que nunca sabrás que perdiste
-          </h2>
-          <p className="text-slate-500 text-lg max-w-xl mx-auto">
-            Cada mensaje sin respuesta es un paciente que va a otra clínica.
-            Y tú ni te enteraste.
-          </p>
-        </div>
+        <div className="grid lg:grid-cols-2 gap-16 items-start">
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {PROBLEMS.map((p) => (
-            <div key={p.title} className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
-              <div className="w-11 h-11 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center mb-4">
-                <span className="material-symbols-outlined text-red-500 text-[22px]">{p.icon}</span>
-              </div>
-              <h3 className="font-semibold text-slate-900 text-base mb-2">{p.title}</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">{p.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Transición */}
-        <div className="mt-14 text-center">
-          <div className="inline-flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-6 py-4 shadow-sm">
-            <span className="material-symbols-outlined text-cyan-500 text-2xl">arrow_downward</span>
-            <p className="text-slate-700 font-semibold">
-              Salus IA resuelve todo esto automáticamente
+          {/* Left: headline */}
+          <div className="lg:sticky lg:top-28">
+            <span className="inline-block text-xs font-bold text-red-500 bg-red-50 border border-red-100 px-3 py-1 rounded-full uppercase tracking-wide mb-5">
+              El problema real
+            </span>
+            <h2 className="text-4xl sm:text-5xl font-black text-[#051125] leading-[1.1] tracking-tight mb-6">
+              Cada mensaje sin respuesta<br />
+              <span className="text-red-400">es un paciente perdido.</span>
+            </h2>
+            <p className="text-slate-500 text-lg leading-relaxed mb-8">
+              Y lo peor: nunca sabrás cuántos se fueron porque nadie les respondió.
+              El 60% de los pacientes no llaman dos veces.
             </p>
+            <div className="flex items-center gap-3 p-4 bg-teal-50 border border-teal-100 rounded-2xl">
+              <span className="material-symbols-outlined text-teal-600 text-2xl shrink-0">check_circle</span>
+              <p className="text-teal-800 text-sm font-medium">
+                Salus IA soluciona todo esto desde el primer día, sin técnicos.
+              </p>
+            </div>
           </div>
+
+          {/* Right: before/after cards */}
+          <div className="space-y-4">
+            {BEFORE_AFTER.map((item, i) => (
+              <div key={i} className="grid grid-cols-2 gap-3">
+                {/* Antes */}
+                <div className="rounded-2xl border border-red-100 bg-red-50/50 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-red-500 text-[15px]">{item.before.icon}</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-red-400 uppercase tracking-wide">Antes</span>
+                  </div>
+                  <p className="text-slate-600 text-xs leading-relaxed">{item.before.text}</p>
+                </div>
+                {/* Después */}
+                <div className="rounded-2xl border border-teal-100 bg-teal-50/50 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-teal-100 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-teal-600 text-[15px]">{item.after.icon}</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wide">Con Salus</span>
+                  </div>
+                  <p className="text-slate-700 text-xs leading-relaxed font-medium">{item.after.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
     </section>

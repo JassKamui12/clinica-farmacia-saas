@@ -5,83 +5,96 @@ import { useState } from "react";
 const FAQS = [
   {
     q: "¿Necesito saber de tecnología para usar Salus IA?",
-    a: "Para nada. Si sabes usar WhatsApp y puedes llenar un formulario, puedes usar Salus IA. El registro toma menos de 5 minutos y no necesitas instalar nada.",
+    a: "No. Si sabes usar WhatsApp y puedes llenar un formulario, puedes usar Salus IA. El registro toma menos de 5 minutos y no necesitas instalar nada en tu computadora o teléfono.",
   },
   {
-    q: "¿Los pacientes sabrán que están hablando con una IA?",
-    a: "El bot responde de forma natural y profesional. Puedes configurarle un nombre personalizado para tu clínica. Si un paciente pregunta directamente, la IA lo dice con honestidad.",
+    q: "¿Los pacientes saben que hablan con una IA?",
+    a: "El bot responde de forma natural y profesional con el nombre que tú le pongas. Si un paciente pregunta directamente si es una IA, el bot lo confirma con honestidad.",
   },
   {
-    q: "¿Qué pasa con los mensajes que ya me llegan por WhatsApp?",
-    a: "Puedes conectar tu número actual de WhatsApp escaneando un QR. El bot responde automáticamente, pero tú puedes intervenir en cualquier momento — cuando tú escribas, el bot se pausa y tú atiendes directamente.",
+    q: "¿Puedo usar mi número de WhatsApp actual?",
+    a: "Sí. Solo escaneás un QR con tu teléfono. El bot usa tu número de siempre. Tus pacientes no necesitan hacer nada diferente.",
   },
   {
-    q: "¿Puedo tener varios doctores con diferentes horarios?",
-    a: "Sí. Puedes agregar múltiples doctores, cada uno con sus horarios y especialidades. El bot asigna citas al doctor disponible según el tipo de consulta.",
+    q: "¿Qué pasa si necesito atender personalmente a un paciente?",
+    a: "Escribe desde el panel y el bot se pausa automáticamente. Tú atiendes directamente. Cuando dejas de responder por 5 minutos, el bot retoma la conversación.",
   },
   {
-    q: "¿El bot puede manejar emergencias médicas?",
-    a: "El bot identifica mensajes de urgencia y tiene instrucciones para referir al 911 o al número de emergencia de tu clínica. Nunca reemplaza la atención de emergencias.",
-  },
-  {
-    q: "¿Qué pasa si un paciente pregunta algo que el bot no sabe responder?",
-    a: "El bot escala la conversación. Te llega una notificación y tú tomas el control para atender personalmente. La sesión queda en pausa 5 minutos mientras espera tu respuesta.",
+    q: "¿Puedo tener varios doctores con horarios distintos?",
+    a: "Sí. En los planes Clínica y Pro puedes agregar múltiples doctores, cada uno con sus horarios. El bot asigna citas al doctor disponible.",
   },
   {
     q: "¿Los datos de mis pacientes están seguros?",
-    a: "Sí. Los datos se almacenan en servidores cifrados (Supabase/PostgreSQL). Solo tú y tu equipo tienen acceso. Cumplimos con estándares de seguridad de datos médicos.",
+    a: "Sí. Tus datos se almacenan en servidores cifrados (Supabase/PostgreSQL). Solo tú y tu equipo tienen acceso. No compartimos información con terceros.",
   },
   {
-    q: "¿Cuánto cuesta después de las 2 semanas de prueba?",
-    a: "El plan Básico empieza desde L 300/mes (~$12 USD). Puedes ver todos los planes en la sección de precios. El pago se hace por transferencia bancaria, tarjeta o el método disponible en tu país.",
+    q: "¿Qué pasa si un paciente tiene una emergencia médica?",
+    a: "El bot detecta palabras de urgencia y dirige al paciente al número de emergencias que configures (911, tu celular directo). Nunca reemplaza la atención de emergencias.",
+  },
+  {
+    q: "¿Puedo cancelar en cualquier momento?",
+    a: "Sí. Sin contratos ni penalizaciones. Si decides no renovar, simplemente no lo haces. Tus datos se mantienen disponibles por 30 días para que puedas exportarlos.",
   },
 ];
 
 export function FaqSection() {
-  const [open, setOpen] = useState<number | null>(null);
+  const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="py-24 bg-slate-50">
-      <div className="max-w-3xl mx-auto px-6">
-        <div className="text-center mb-12">
-          <span className="inline-block text-sm font-semibold text-[#051125] bg-slate-200 px-3 py-1 rounded-full mb-4 border border-slate-300">
-            Preguntas frecuentes
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3 tracking-tight">
-            Resolvemos tus dudas
-          </h2>
-          <p className="text-slate-500">
-            Si tienes otra pregunta, escríbenos al{" "}
-            <a href="mailto:hola@salus-ia.com" className="text-cyan-600 hover:underline font-medium">
+    <section id="faq" className="py-24 bg-white">
+      <div className="max-w-6xl mx-auto px-6">
+
+        <div className="grid lg:grid-cols-[1fr,2fr] gap-16 items-start">
+
+          {/* Left sticky */}
+          <div className="lg:sticky lg:top-28">
+            <span className="inline-block text-xs font-bold text-[#0d9488] bg-teal-50 border border-teal-100 px-3 py-1 rounded-full uppercase tracking-wide mb-5">
+              FAQ
+            </span>
+            <h2 className="text-4xl font-black text-[#051125] tracking-tight leading-[1.1] mb-5">
+              Preguntas<br />frecuentes.
+            </h2>
+            <p className="text-slate-500 leading-relaxed mb-6">
+              ¿No encuentras tu respuesta? Escríbenos directamente.
+            </p>
+            <a href="mailto:hola@salus-ia.com"
+              className="inline-flex items-center gap-2 border-2 border-[#051125] text-[#051125] font-bold px-5 py-3 rounded-2xl hover:bg-[#051125] hover:text-white transition-all text-sm">
+              <span className="material-symbols-outlined text-[18px]">mail</span>
               hola@salus-ia.com
             </a>
-          </p>
-        </div>
+          </div>
 
-        <div className="space-y-3">
-          {FAQS.map((faq, i) => (
-            <div key={i}
-              className={`rounded-2xl border transition-all ${
-                open === i
-                  ? "bg-white border-slate-300 shadow-md"
-                  : "bg-white border-slate-200 hover:border-slate-300"
-              }`}>
-              <button
-                onClick={() => setOpen(open === i ? null : i)}
-                className="w-full flex items-center justify-between px-6 py-4 text-left gap-4"
-                aria-expanded={open === i}>
-                <span className="font-semibold text-slate-900 text-sm">{faq.q}</span>
-                <span className={`material-symbols-outlined text-slate-400 text-[20px] shrink-0 transition-transform ${
-                  open === i ? "rotate-180" : ""
-                }`}>expand_more</span>
-              </button>
-              {open === i && (
-                <div className="px-6 pb-5">
-                  <p className="text-slate-600 text-sm leading-relaxed">{faq.a}</p>
-                </div>
-              )}
-            </div>
-          ))}
+          {/* Accordion */}
+          <div className="space-y-2">
+            {FAQS.map((faq, i) => (
+              <div key={i}
+                className={`rounded-2xl border transition-all overflow-hidden ${
+                  open === i ? "border-teal-200 bg-teal-50/50" : "border-slate-100 bg-slate-50/50 hover:border-slate-200"
+                }`}>
+                <button
+                  onClick={() => setOpen(open === i ? null : i)}
+                  className="w-full flex items-center justify-between px-6 py-4 text-left gap-4"
+                  aria-expanded={open === i}>
+                  <span className={`font-semibold text-sm transition-colors ${open === i ? "text-[#0d9488]" : "text-slate-800"}`}>
+                    {faq.q}
+                  </span>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                    open === i ? "border-teal-500 bg-teal-500" : "border-slate-300"
+                  }`}>
+                    <span className={`material-symbols-outlined text-[14px] transition-transform ${
+                      open === i ? "text-white rotate-45" : "text-slate-400"
+                    }`}>add</span>
+                  </div>
+                </button>
+                {open === i && (
+                  <div className="px-6 pb-5">
+                    <p className="text-slate-600 text-sm leading-relaxed">{faq.a}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
     </section>
