@@ -1,93 +1,90 @@
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { compare } from "bcrypt";
-import { prisma } from "@/lib/prisma";
-import type { NextAuthOptions } from "next-auth";
-import { getServerSession } from "next-auth/next";
+import { SignJWT, jwtVerify } from "jose";
+import { cookies } from "next/headers";
+import { prisma } from "./prisma";
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    CredentialsProvider({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials: any) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email y contraseña requeridos");
-        }
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET ?? "dev-secret-change-in-production"
+);
+const COOKIE_NAME = "clinica_session";
+const MAX_AGE = 60 * 60 * 24 * 30; // 30 días
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
-
-        if (!user || !user.passwordHash) {
-          throw new Error("Usuario no encontrado");
-        }
-
-        const isPasswordValid = await compare(
-          credentials.password as string,
-          user.passwordHash
-        );
-
-        if (!isPasswordValid) {
-          throw new Error("Contraseña incorrecta");
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          whatsappPhone: user.whatsappPhone,
-          clinicId: user.clinicId,
-        };
-      },
-    }),
-  ],
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
-  },
-  callbacks: {
-    async jwt({ token, user }: any) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.whatsappPhone = user.whatsappPhone;
-        token.clinicId = user.clinicId;
-      }
-      return token;
-    },
-    async session({ session, token }: any) {
-      if (token && session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).whatsappPhone = token.whatsappPhone;
-        (session.user as any).clinicId = token.clinicId;
-      }
-      return session;
-    },
-  },
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-};
-
-export type SessionUser = {
-  id: string;
-  role: "ADMIN" | "DOCTOR" | "PHARMACIST" | "RECEPTIONIST";
-  whatsappPhone?: string | null;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-};
-
-export async function auth() {
-  return await getServerSession(authOptions);
+export interface SessionPayload {
+  userId: string;
+  clinicId: string | null;
+  role: string;
+  isSuperAdmin: boolean;
+  tokenVersion: number;
 }
 
-export default NextAuth(authOptions);
+export async function signToken(payload: SessionPayload): Promise<string> {
+  return new SignJWT({ ...payload })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("30d")
+    .setIssuedAt()
+    .sign(JWT_SECRET);
+}
+
+export async function verifyToken(token: string): Promise<SessionPayload | null> {
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    return payload as unknown as SessionPayload;
+  } catch {
+    return null;
+  }
+}
+
+export async function getSession(): Promise<SessionPayload | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAME)?.value;
+  if (!token) return null;
+  return verifyToken(token);
+}
+
+// Valida sesión y verifica tokenVersion contra DB (permite logout forzado)
+export async function getValidSession(): Promise<SessionPayload | null> {
+  const session = await getSession();
+  if (!session) return null;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { tokenVersion: true, isActive: true },
+    });
+    if (!user || !user.isActive || user.tokenVersion !== session.tokenVersion) {
+      return null;
+    }
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+export function buildSetCookieHeader(token: string): string {
+  return `${COOKIE_NAME}=${token}; HttpOnly; Path=/; Max-Age=${MAX_AGE}; SameSite=Lax${
+    process.env.NODE_ENV === "production" ? "; Secure" : ""
+  }`;
+}
+
+export function buildClearCookieHeader(): string {
+  return `${COOKIE_NAME}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax`;
+}
+
+export async function requireAuth(): Promise<SessionPayload> {
+  const session = await getValidSession();
+  if (!session) throw new AuthError("No autorizado");
+  return session;
+}
+
+export async function requireSuperAdmin(): Promise<SessionPayload> {
+  const session = await requireAuth();
+  if (!session.isSuperAdmin) throw new AuthError("Acceso restringido a super-admin");
+  return session;
+}
+
+export class AuthError extends Error {
+  status = 401;
+  constructor(message: string) {
+    super(message);
+    this.name = "AuthError";
+  }
+}

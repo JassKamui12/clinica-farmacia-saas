@@ -1,13 +1,9 @@
-import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
 
 export default async function RootPage() {
-  const session = await auth();
-
-  if (!session?.user) redirect("/login");
-
-  const role = (session.user as any).role;
-  if (role === "DOCTOR") redirect("/doctor");
-  if (role === "PHARMACIST") redirect("/pharmacist");
-  redirect("/admin");
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (session.isSuperAdmin) redirect("/super-admin/panel");
+  redirect("/dashboard/inicio");
 }

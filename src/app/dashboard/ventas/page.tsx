@@ -1,0 +1,1 @@
+export default function Page() { return (<div className="p-6 lg:p-8 flex flex-col items-center justify-center min-h-[60vh] text-slate-400"><span className="material-symbols-outlined text-5xl mb-3">construction</span><p className="font-medium text-slate-600">Esta sección está en desarrollo</p></div>); }

@@ -7,25 +7,20 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint .",
-    "migrate": "prisma migrate dev",
     "db:push": "prisma db push",
+    "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma migrate reset --force && npm run db:seed",
     "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.97.1",
-    "@auth/prisma-adapter": "^2.7.0",
     "@prisma/client": "^6.19.3",
-    "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
-    "exsolve": "^1.0.8",
+    "jose": "^5.10.0",
     "lucide-react": "^0.462.0",
     "next": "^15.2.4",
-    "next-auth": "^4.24.14",
     "openai": "^4.104.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -33,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.5",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",

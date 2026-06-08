@@ -9,172 +9,223 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ── Clínica / tenant ──────────────────────────────────────────────────────────
+// ─── Tenant: Clínica ──────────────────────────────────────────────────────────
 model Clinic {
-  id                  String        @id @default(cuid())
-  name                String
-  type                ClinicType    @default(MEDICAL)
-  slug                String        @unique
-  address             String?
-  city                String?
-  country             String        @default("HN")
-  phone               String?
-  isActive            Boolean       @default(true)
+  id               String   @id @default(cuid())
+  name             String
+  rubroId          String   @default("clinica-general") // "clinica-general" | "odontologia" | "farmacia" | etc.
+  slug             String   @unique                      // slug único para el bot de WhatsApp
+  plan             String   @default("trial")            // "trial" | "basico" | "pro"
+  trialEndsAt      DateTime?
+  isActive         Boolean  @default(true)
+  tokenVersion     Int      @default(0)
+  botServiceIndex  Int      @default(0)                  // índice para multi-instancia Railway
+  logoUrl          String?
+  address          String?
+  city             String?
+  country          String   @default("HN")
+  phone            String?
 
-  // WhatsApp Business config (por clínica)
-  waPhoneNumberId     String?       // Meta phone_number_id — identifica el número
-  waAccessToken       String?       // Meta access token
-  waVerifyToken       String?
+  // WhatsApp
+  whatsappPhone    String?  // número vinculado (Baileys)
+  waMode           String   @default("BAILEYS")          // "BAILEYS" | "META"
+  waPhoneNumberId  String?  // Meta phone_number_id
+  waAccessToken    String?
+  waVerifyToken    String?
 
-  // Configuración de IA (por clínica — sobreescribe global)
-  aiProvider          String?       // "anthropic" | "groq" | "openai" | "deepseek"
-  aiModel             String?
-  aiApiKey            String?
-  aiName              String        @default("Asistente")
-  aiSystemPrompt      String?       // prompt personalizado (opcional)
+  // IA global de la clínica (sobreescribe defaults)
+  aiName           String   @default("Asistente")
+  aiSystemPrompt   String?
 
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  users               User[]
-  patients            Patient[]
-  appointments        Appointment[]
-  clinicalVisits      ClinicalVisit[]
-  prescriptions       Prescription[]
-  patientFollowUps    PatientFollowUp[]
-  pharmacyProducts    PharmacyProduct[]
-  notifications       Notification[]
-  whatsappMessages    WhatsAppMessage[]
-  whatsappSessions    WhatsAppSession[]
+  users            User[]
+  patients         Patient[]
+  appointments     Appointment[]
+  clinicalVisits   ClinicalVisit[]
+  prescriptions    Prescription[]
+  followUps        PatientFollowUp[]
+  pharmacyProducts PharmacyProduct[]
+  pharmacySales    PharmacySale[]
+  workingHours     WorkingHours[]
+  whatsappMessages WhatsAppMessage[]
+  whatsappSessions WhatsAppSession[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]
 
-  @@index([waPhoneNumberId])
+  @@index([slug])
+  @@index([rubroId])
   @@map("clinics")
 }
 
-model Account {
-  id                String  @id
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+// ─── Rubros disponibles (configurados por super-admin) ───────────────────────
+model RubroConfig {
+  id             String   @id @default(cuid())
+  rubroId        String   @unique  // "clinica-general" | "odontologia" | "farmacia" | etc.
+  nombre         String
+  descripcion    String?
+  isActive       Boolean  @default(true)
+  promptTemplate String?  // system prompt base para el bot de este rubro
+  configJson     String   @default("{}")  // config adicional en JSON
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  @@unique([provider, providerAccountId])
+  @@map("rubro_configs")
 }
 
-model AiRecommendation {
-  id        String   @id @default(cuid())
-  role      String   @default("medico")
-  prompt    String
-  response  String
-  createdAt DateTime @default(now())
+// ─── Usuarios (staff de la clínica + super-admin) ─────────────────────────────
+model User {
+  id             String    @id @default(cuid())
+  clinicId       String?
+  email          String    @unique
+  passwordHash   String?
+  name           String?
+  specialty      String?   // para doctores: "Medicina General", "Odontología", etc.
+  role           UserRole  @default(ADMIN)
+  isSuperAdmin   Boolean   @default(false)
+  tokenVersion   Int       @default(0)
+  whatsappPhone  String?
+  logoUrl        String?
+  licenseNumber  String?   // número de colegiado/licencia profesional
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  clinic         Clinic?          @relation(fields: [clinicId], references: [id])
+  appointments   Appointment[]
+  clinicalVisits ClinicalVisit[]
+  prescriptions  Prescription[]
+  workingHours   WorkingHours[]
+  notifications  Notification[]
+
+  @@index([email])
+  @@index([clinicId])
+  @@index([role])
+  @@map("users")
 }
 
+// ─── Pacientes ────────────────────────────────────────────────────────────────
+model Patient {
+  id            String   @id @default(cuid())
+  clinicId      String
+  name          String
+  phone         String?
+  whatsappPhone String?  // JID derivado (con @s.whatsapp.net o solo el número)
+  realPhone     String?  // número formateado legible
+  email         String?
+  dateOfBirth   DateTime?
+  gender        String?
+  bloodType     String?
+  allergies     String?
+  notes         String?
+  status        String   @default("activo") // "activo" | "inactivo"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  clinic          Clinic            @relation(fields: [clinicId], references: [id])
+  appointments    Appointment[]
+  clinicalVisits  ClinicalVisit[]
+  prescriptions   Prescription[]
+  followUps       PatientFollowUp[]
+  triageReports   TriageReport[]
+  whatsappMessages WhatsAppMessage[]
+  pharmacySales   PharmacySale[]
+
+  @@index([clinicId])
+  @@index([whatsappPhone])
+  @@index([email])
+  @@map("patients")
+}
+
+// ─── Citas ────────────────────────────────────────────────────────────────────
 model Appointment {
   id                  String            @id @default(cuid())
-  clinicId            String?
+  clinicId            String
   patientId           String
   doctorId            String
   date                DateTime
-  time                String
+  time                String            // "09:00" formato HH:MM
+  service             String?           // servicio solicitado
   status              AppointmentStatus @default(PENDING)
   reason              String?
   notes               String?
+  source              String            @default("manual") // "manual" | "whatsapp" | "web"
   whatsappReminder24h Boolean           @default(false)
   whatsappReminder1h  Boolean           @default(false)
   whatsappConfirmed   Boolean           @default(false)
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
-  Clinic              Clinic?           @relation(fields: [clinicId], references: [id])
-  User                User              @relation(fields: [doctorId], references: [id])
-  Patient             Patient           @relation(fields: [patientId], references: [id])
 
+  clinic    Clinic  @relation(fields: [clinicId], references: [id])
+  patient   Patient @relation(fields: [patientId], references: [id])
+  doctor    User    @relation(fields: [doctorId], references: [id])
+
+  @@index([clinicId])
   @@index([date])
-  @@index([date, time])
   @@index([doctorId])
   @@index([patientId])
+  @@map("appointments")
 }
 
+// ─── Expediente clínico / visitas ─────────────────────────────────────────────
 model ClinicalVisit {
-  id        String   @id @default(cuid())
-  clinicId  String?
-  patientId String
-  doctorId  String
-  visitDate DateTime @default(now())
-  symptoms  String?
-  diagnosis String?
-  treatment String?
-  notes     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  Clinic    Clinic?   @relation(fields: [clinicId], references: [id])
-  User      User     @relation(fields: [doctorId], references: [id])
-  Patient   Patient   @relation(fields: [patientId], references: [id])
+  id          String   @id @default(cuid())
+  clinicId    String
+  patientId   String
+  doctorId    String
+  visitDate   DateTime @default(now())
+  symptoms    String?
+  diagnosis   String?
+  treatment   String?
+  notes       String?
+  attachments String?  // JSON array de URLs
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@index([doctorId])
+  clinic    Clinic  @relation(fields: [clinicId], references: [id])
+  patient   Patient @relation(fields: [patientId], references: [id])
+  doctor    User    @relation(fields: [doctorId], references: [id])
+  prescriptions Prescription[]
+
+  @@index([clinicId])
   @@index([patientId])
   @@index([visitDate])
+  @@map("clinical_visits")
 }
 
-model Notification {
-  id                String    @id @default(cuid())
-  clinicId          String?
-  title             String
-  content           String
-  channel           String    @default("in_app")
-  role              String?
-  userId            String?
-  phone             String?
-  whatsappMessageId String?
-  sent              Boolean   @default(false)
-  sentAt            DateTime?
-  read              Boolean   @default(false)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  Clinic            Clinic?   @relation(fields: [clinicId], references: [id])
-  User              User?     @relation(fields: [userId], references: [id])
+// ─── Recetas ──────────────────────────────────────────────────────────────────
+model Prescription {
+  id          String             @id @default(cuid())
+  clinicId    String
+  patientId   String
+  doctorId    String
+  visitId     String?
+  medications Json               // [{nombre, dosis, frecuencia, duracion, cantidad}]
+  diagnosis   String?
+  notes       String?
+  status      PrescriptionStatus @default(ACTIVE)
+  expiresAt   DateTime?
+  whatsappSent Boolean           @default(false)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 
-  @@index([userId])
-  @@index([role])
-  @@index([read])
+  clinic   Clinic         @relation(fields: [clinicId], references: [id])
+  patient  Patient        @relation(fields: [patientId], references: [id])
+  doctor   User           @relation(fields: [doctorId], references: [id])
+  visit    ClinicalVisit? @relation(fields: [visitId], references: [id])
+  followUp PatientFollowUp?
+
+  @@index([clinicId])
+  @@index([patientId])
+  @@index([status])
+  @@map("prescriptions")
 }
 
-model Patient {
-  id              String            @id @default(cuid())
-  clinicId        String?
-  name            String
-  phone           String?
-  email           String?
-  whatsappPhone   String?
-  dateOfBirth     DateTime?
-  gender          String?
-  bloodType       String?
-  allergies       String?
-  notes           String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  Clinic          Clinic?           @relation(fields: [clinicId], references: [id])
-  Appointment     Appointment[]
-  ClinicalVisit   ClinicalVisit[]
-  PatientFollowUp PatientFollowUp[]
-  Prescription    Prescription[]
-  TriageReport    TriageReport[]
-  WhatsAppMessage WhatsAppMessage[]
-
-  @@index([email])
-  @@index([whatsappPhone])
-}
-
+// ─── Seguimiento de pacientes ─────────────────────────────────────────────────
 model PatientFollowUp {
   id             String         @id @default(cuid())
-  clinicId       String?
+  clinicId       String
   patientId      String
   prescriptionId String?        @unique
   startDate      DateTime
@@ -188,70 +239,102 @@ model PatientFollowUp {
   alertReason    String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-  Clinic         Clinic?        @relation(fields: [clinicId], references: [id])
-  Patient        Patient        @relation(fields: [patientId], references: [id])
-  Prescription   Prescription?  @relation(fields: [prescriptionId], references: [id])
 
-  @@index([alertTriggered])
-  @@index([nextCheckIn])
+  clinic       Clinic        @relation(fields: [clinicId], references: [id])
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  prescription Prescription? @relation(fields: [prescriptionId], references: [id])
+
+  @@index([clinicId])
   @@index([patientId])
   @@index([status])
+  @@index([nextCheckIn])
+  @@map("patient_follow_ups")
 }
 
+// ─── Horarios de trabajo (doctores) ──────────────────────────────────────────
+model WorkingHours {
+  id        String   @id @default(cuid())
+  clinicId  String
+  userId    String   // doctor o staff
+  dayOfWeek Int      // 0=Dom, 1=Lun, ..., 6=Sáb
+  startTime String   // "08:00"
+  endTime   String   // "17:00"
+  isActive  Boolean  @default(true)
+
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([clinicId])
+  @@index([userId])
+  @@map("working_hours")
+}
+
+// ─── Rubro Farmacia: Productos ────────────────────────────────────────────────
 model PharmacyProduct {
   id                String   @id @default(cuid())
-  clinicId          String?
+  clinicId          String
   name              String
-  category          String?
+  category          String?  // "analgesico" | "antibiotico" | "vitamina" | "otro"
+  description       String?
   indications       String?
   contraindications String?
   price             Float    @default(0)
   stock             Int      @default(0)
+  minStock          Int      @default(5)
+  unit              String   @default("unidad") // "unidad" | "caja" | "frasco"
+  requiresPrescription Boolean @default(false)
   isAvailable       Boolean  @default(true)
   createdAt         DateTime @default(now())
-  updatedAt         DateTime  @updatedAt
-  Clinic            Clinic?  @relation(fields: [clinicId], references: [id])
+  updatedAt         DateTime @updatedAt
 
-  @@index([category])
+  clinic     Clinic         @relation(fields: [clinicId], references: [id])
+  saleItems  PharmacySaleItem[]
+
   @@index([clinicId])
+  @@index([category])
+  @@map("pharmacy_products")
 }
 
-model Prescription {
-  id              String                    @id @default(cuid())
-  clinicId        String?
-  patientId       String
-  doctorId        String
-  createdAt       DateTime                  @default(now())
-  updatedAt       DateTime                  @updatedAt
-  notes           String?
-  productName     String
-  dosage          String?
-  instructions    String?
-  quantity        Int                     @default(1)
-  totalPrice      Int                     @default(0)
-  billingStatus  PrescriptionBillingStatus @default(PENDING)
-  whatsappSent   Boolean                  @default(false)
-  Clinic          Clinic?        @relation(fields: [clinicId], references: [id])
-  Patient         Patient        @relation(fields: [patientId], references: [id])
-  User            User           @relation(fields: [doctorId], references: [id])
-  PatientFollowUp PatientFollowUp?
+// ─── Rubro Farmacia: Ventas ───────────────────────────────────────────────────
+model PharmacySale {
+  id             String      @id @default(cuid())
+  clinicId       String
+  patientId      String?
+  prescriptionRef String?    // referencia de receta externa o ID
+  total          Float       @default(0)
+  status         SaleStatus  @default(PENDING)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
+  clinic  Clinic             @relation(fields: [clinicId], references: [id])
+  patient Patient?           @relation(fields: [patientId], references: [id])
+  items   PharmacySaleItem[]
+
+  @@index([clinicId])
   @@index([patientId])
-  @@index([doctorId])
-  @@index([billingStatus])
+  @@map("pharmacy_sales")
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([userId])
+model PharmacySaleItem {
+  id        String  @id @default(cuid())
+  saleId    String
+  productId String
+  quantity  Int
+  unitPrice Float
+  subtotal  Float
+
+  sale    PharmacySale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product PharmacyProduct @relation(fields: [productId], references: [id])
+
+  @@index([saleId])
+  @@map("pharmacy_sale_items")
 }
 
+// ─── Triage IA ────────────────────────────────────────────────────────────────
 model TriageReport {
   id                 String        @id @default(cuid())
+  clinicId           String?
   patientId          String?
   phone              String
   symptoms           String
@@ -265,36 +348,32 @@ model TriageReport {
   reviewedBy         String?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
-  Patient            Patient?       @relation(fields: [patientId], references: [id])
 
-  @@index([createdAt])
+  patient Patient? @relation(fields: [patientId], references: [id])
+
+  @@index([clinicId])
   @@index([status])
   @@index([urgency])
-  @@index([patientId])
+  @@index([createdAt])
+  @@map("triage_reports")
 }
 
-model User {
-  id            String          @id @default(cuid())
-  clinicId      String?
-  email         String          @unique
-  emailVerified DateTime?
-  passwordHash  String?
-  name          String?
-  specialty     String?         // para doctores: "Medicina General", "Odontología", etc.
-  role          UserRole        @default(ADMIN)
-  whatsappPhone String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  Clinic        Clinic?         @relation(fields: [clinicId], references: [id])
-  Account       Account[]
-  Appointment   Appointment[]
-  ClinicalVisit ClinicalVisit[]
-  Notification  Notification[]
-  Prescription  Prescription[]
-  Session       Session[]
+// ─── WhatsApp ─────────────────────────────────────────────────────────────────
+model WhatsAppSession {
+  id                 String    @id @default(cuid())
+  clinicId           String?
+  mode               String    @default("BAILEYS")  // "BAILEYS" | "META"
+  status             String    @default("disconnected") // "disconnected" | "qr_pending" | "connected"
+  phoneNumber        String?
+  qrCode             String?
+  sessionData        String?   @db.Text  // JSON serializado de las credenciales Baileys
+  lastError          String?
+  updatedAt          DateTime  @updatedAt
 
-  @@index([email])
-  @@index([role])
+  clinic Clinic? @relation(fields: [clinicId], references: [id])
+
+  @@index([clinicId])
+  @@map("whatsapp_sessions")
 }
 
 model WhatsAppMessage {
@@ -302,52 +381,84 @@ model WhatsAppMessage {
   clinicId     String?
   patientId    String?
   phone        String
-  direction    MessageDirection
-  body         String?
-  messageType  MessageType      @default(TEXT)
-  templateName String?
-  status       MessageStatus    @default(SENT)
-  externalId   String?
-  error        String?
-  intent       String?
-  sessionData  String?
+  role         String           // "user" | "assistant" | "owner"
+  content      String
   createdAt    DateTime         @default(now())
-  Clinic       Clinic?          @relation(fields: [clinicId], references: [id])
-  Patient      Patient?         @relation(fields: [patientId], references: [id])
+
+  clinic  Clinic?  @relation(fields: [clinicId], references: [id])
+  patient Patient? @relation(fields: [patientId], references: [id])
 
   @@index([clinicId])
-  @@index([createdAt])
-  @@index([direction])
-  @@index([patientId])
   @@index([phone])
-  @@index([status])
+  @@index([createdAt])
+  @@map("whatsapp_messages")
 }
 
-model WhatsAppSession {
-  id                 String    @id @default(cuid())
-  phone              String    @unique
-  clinicId           String?
-  currentIntent      String?
-  step               String    @default("menu")
-  contextData        String    @default("{}")
-  ownerTakenOver     Boolean   @default(false)
-  ownerLastMessageAt DateTime?
-  expiresAt          DateTime
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  Clinic             Clinic?   @relation(fields: [clinicId], references: [id])
+// ─── Notificaciones ───────────────────────────────────────────────────────────
+model Notification {
+  id        String    @id @default(cuid())
+  clinicId  String?
+  userId    String?
+  title     String
+  content   String
+  channel   String    @default("in_app") // "in_app" | "whatsapp" | "email"
+  read      Boolean   @default(false)
+  sent      Boolean   @default(false)
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  clinic Clinic? @relation(fields: [clinicId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id])
 
   @@index([clinicId])
-  @@index([expiresAt])
-  @@index([phone])
+  @@index([userId])
+  @@index([read])
+  @@map("notifications")
+}
+
+// ─── Audit Log (super-admin) ──────────────────────────────────────────────────
+model AuditLog {
+  id        String   @id @default(cuid())
+  clinicId  String?
+  userId    String?
+  action    String   // "login" | "create_appointment" | "delete_patient" | etc.
+  entity    String?
+  entityId  String?
+  meta      String?  // JSON con detalles adicionales
+  ip        String?
+  createdAt DateTime @default(now())
+
+  clinic Clinic? @relation(fields: [clinicId], references: [id])
+
+  @@index([clinicId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  DOCTOR
+  PHARMACIST
+  RECEPTIONIST
 }
 
 enum AppointmentStatus {
   PENDING
   CONFIRMED
+  IN_PROGRESS  // paciente en sala de espera
   COMPLETED
   CANCELLED
   NO_SHOW
+}
+
+enum PrescriptionStatus {
+  ACTIVE
+  DISPENSED
+  EXPIRED
+  CANCELLED
 }
 
 enum FollowUpStatus {
@@ -357,38 +468,10 @@ enum FollowUpStatus {
   ALERT
 }
 
-enum MessageDirection {
-  INBOUND
-  OUTBOUND
-}
-
-enum MessageStatus {
-  SENT
-  DELIVERED
-  READ
-  FAILED
-}
-
-enum MessageType {
-  TEXT
-  TEMPLATE
-  INTERACTIVE
-  MEDIA
-}
-
-enum PrescriptionBillingStatus {
+enum SaleStatus {
   PENDING
-  PREPARED
-  BILLED
-  DELIVERED
+  COMPLETED
   CANCELLED
-}
-
-enum TriageStatus {
-  PENDING
-  REVIEWED
-  ESCALATED
-  RESOLVED
 }
 
 enum TriageUrgency {
@@ -398,16 +481,9 @@ enum TriageUrgency {
   EMERGENCY
 }
 
-enum ClinicType {
-  MEDICAL
-  DENTAL
-  PHARMACY
-  COMBINED
-}
-
-enum UserRole {
-  ADMIN
-  DOCTOR
-  PHARMACIST
-  RECEPTIONIST
+enum TriageStatus {
+  PENDING
+  REVIEWED
+  ESCALATED
+  RESOLVED
 }
