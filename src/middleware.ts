@@ -14,6 +14,7 @@ const PUBLIC_PATHS = [
   "/api/auth/register",
   "/api/auth/google",     // Google OAuth initiation + callback
   "/api/whatsapp/webhook", // webhook de Meta — sin auth
+  "/api/cron",             // cron jobs — se protegen con CRON_SECRET, no con sesión
 ];
 
 // Rutas que requieren auth pero NO requieren clinicId (usuarios Google recién creados)
