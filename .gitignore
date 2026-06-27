@@ -6,3 +6,4 @@ out
 prisma/dev.db
 src/generated
 .vercel
+.vercel-deploy.log
