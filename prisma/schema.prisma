@@ -53,6 +53,7 @@ model Clinic {
   whatsappSessions WhatsAppSession[]
   notifications    Notification[]
   auditLogs        AuditLog[]
+  healthCampaigns  HealthCampaign[]
 
   @@index([slug])
   @@index([rubroId])
@@ -486,4 +487,36 @@ enum TriageStatus {
   REVIEWED
   ESCALATED
   RESOLVED
+}
+
+// ─── Captación / Recordatorios de cuidado (patient recall) ────────────────────
+// NO es publicidad: alcance proactivo enfocado en el cuidado del paciente
+// (controles preventivos, seguimiento de crónicos, reactivación de inactivos).
+model HealthCampaign {
+  id              String         @id @default(cuid())
+  clinicId        String
+  title           String         // ej: "Control anual de presión"
+  messageTemplate String         // mensaje WhatsApp; admite {nombre}
+  audienceType    String         @default("inactive") // "inactive" | "all"
+  inactiveMonths  Int            @default(6)           // para audienceType="inactive"
+  status          CampaignStatus @default(DRAFT)
+  scheduledFor    DateTime?
+  sentCount       Int            @default(0)
+  lastRunAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+
+  @@index([clinicId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@map("health_campaigns")
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  CANCELLED
 }

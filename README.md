@@ -8,8 +8,8 @@ Plataforma SaaS para clínica con farmacia integrada, IA asistiva y canal de Wha
 - **Base de datos**: SQLite (dev) → PostgreSQL / Supabase (prod)
 - **ORM**: Prisma 6
 - **Auth**: NextAuth.js v5 (credenciales + JWT)
-- **WhatsApp**: Meta Cloud API
-- **IA**: Anthropic Claude
+- **WhatsApp**: Meta Cloud API + Baileys (bot-service)
+- **IA**: Groq (Llama 3.3 70B) — vía bot-service
 - **UI**: Tailwind CSS
 - **Deploy**: Vercel
 
@@ -27,7 +27,7 @@ Copia `.env.example` a `.env` y configura:
 DATABASE_URL="file:./dev.db"          # SQLite local / Supabase PostgreSQL
 NEXTAUTH_SECRET="..."                 # openssl rand -base64 32
 NEXTAUTH_URL="http://localhost:3000"
-ANTHROPIC_API_KEY="sk-ant-..."
+GROQ_API_KEY="gsk_..."                # IA del bot-service (Llama 3.3 70B)
 WHATSAPP_PHONE_NUMBER_ID="..."
 WHATSAPP_ACCESS_TOKEN="EAAG..."
 WHATSAPP_VERIFY_TOKEN="..."

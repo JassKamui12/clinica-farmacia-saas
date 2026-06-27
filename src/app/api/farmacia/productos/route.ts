@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, botSession } from "@/lib/auth";
+import { isBotRequest } from "@/lib/botAuth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -7,17 +8,25 @@ const createSchema = z.object({
   name: z.string().min(2),
   category: z.string().optional(),
   description: z.string().optional(),
+  indications: z.string().optional(),
+  contraindications: z.string().optional(),
   price: z.number().min(0),
   stock: z.number().int().min(0),
   minStock: z.number().int().min(0).default(5),
   unit: z.string().default("unidad"),
   requiresPrescription: z.boolean().default(false),
+  isAvailable: z.boolean().default(true),
 });
+
+async function resolveSession(req: NextRequest, clinicIdOverride?: string) {
+  if (isBotRequest(req) && clinicIdOverride) return botSession(clinicIdOverride);
+  return requireAuth();
+}
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAuth();
     const { searchParams } = new URL(req.url);
+    const session = await resolveSession(req, searchParams.get("clinicId") ?? undefined);
     const q = searchParams.get("q") ?? "";
     const category = searchParams.get("category") ?? "";
     const lowStock = searchParams.get("lowStock") === "1";

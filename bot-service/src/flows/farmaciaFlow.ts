@@ -7,6 +7,9 @@ interface Producto {
   id: string;
   name: string;
   category: string | null;
+  description: string | null;
+  indications: string | null;
+  contraindications: string | null;
   price: number;
   stock: number;
   requiresPrescription: boolean;
@@ -29,15 +32,19 @@ function buildFarmaciaSystemPrompt(clinicName: string, aiName: string, productos
   const catalogoLines = productos.map((p) => {
     const stock = p.stock === 0 ? "AGOTADO" : `${p.stock} ${p.unit}s`;
     const receta = p.requiresPrescription ? " [REQUIERE RECETA]" : "";
-    return `- ${p.name}: L ${p.price.toFixed(2)}, Stock: ${stock}${receta}`;
+    const usos = p.indications ? `\n    Indicado para: ${p.indications}` : "";
+    const desc = p.description ? `\n    Descripción: ${p.description}` : "";
+    const contra = p.contraindications ? `\n    Contraindicaciones: ${p.contraindications}` : "";
+    return `- ${p.name}: L ${p.price.toFixed(2)}, Stock: ${stock}${receta}${usos}${desc}${contra}`;
   }).join("\n");
 
   return `Eres ${aiName}, el asistente de ${clinicName}.
 
 Eres un asistente de farmacia. Tu función es:
 1. Verificar disponibilidad y precio de medicamentos
-2. Informar si el medicamento requiere receta médica
-3. Crear pedidos cuando el paciente confirme
+2. Explicar para qué sirve un producto usando la info de "Indicado para" / "Descripción" del catálogo
+3. Informar si el medicamento requiere receta médica
+4. Crear pedidos cuando el paciente confirme
 
 CATÁLOGO ACTUAL:
 ${catalogoLines || "Catálogo no disponible en este momento."}

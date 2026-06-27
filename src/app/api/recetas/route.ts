@@ -66,6 +66,10 @@ export async function POST(req: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 
+    // Primer check-in de adherencia a los 3 días de emitida la receta.
+    const nextCheckIn = new Date();
+    nextCheckIn.setDate(nextCheckIn.getDate() + 3);
+
     const receta = await prisma.prescription.create({
       data: {
         clinicId: session.clinicId!,
@@ -77,6 +81,16 @@ export async function POST(req: NextRequest) {
         notes: notes ?? null,
         expiresAt,
         status: "ACTIVE",
+        followUp: {
+          create: {
+            clinicId: session.clinicId!,
+            patientId,
+            startDate: new Date(),
+            endDate: expiresAt,
+            nextCheckIn,
+            status: "ACTIVE",
+          },
+        },
       },
       include: {
         patient: { select: { id: true, name: true, phone: true } },

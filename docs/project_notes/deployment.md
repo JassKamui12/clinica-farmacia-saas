@@ -24,7 +24,8 @@
 - `DIRECT_URL`: Direct PostgreSQL connection (for Prisma)
 - `NEXTAUTH_URL`: https://your-vercel-domain.vercel.app
 - `WHATSAPP_*`: WhatsApp API credentials
-- `DEEPSEEK_API_KEY`: AI service API key
+- `GROQ_API_KEY`: AI service API key (bot-service, Llama 3.3 70B vía Groq)
+- `CRON_SECRET`: protege /api/cron/reminders (recordatorios de cita 24h/1h + check-ins de adherencia)
 
 ## Latest Deployment
 - Commit: f1527a2

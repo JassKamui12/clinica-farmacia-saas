@@ -35,6 +35,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
     section: "Comunicación",
     items: [
       { href: "/dashboard/mensajes",       icon: "chat",             label: "WhatsApp IA", roles: ["ADMIN", "DOCTOR", "RECEPTIONIST", "PHARMACIST"] },
+      { href: "/dashboard/campanas",       icon: "volunteer_activism", label: "Campañas de salud", roles: ["ADMIN", "DOCTOR"] },
       { href: "/dashboard/configuracion",  icon: "settings",         label: "Configuración", roles: ["ADMIN"] },
     ],
   },
