@@ -27,6 +27,12 @@
 - `GROQ_API_KEY`: AI service API key (bot-service, Llama 3.3 70B vía Groq)
 - `CRON_SECRET`: protege /api/cron/reminders (recordatorios de cita 24h/1h + check-ins de adherencia)
 
+## Base de datos (2026-06-27)
+- **Producción = Neon** (proyecto `salus-ia`, id `misty-bird-08780860`, Postgres 17, us-east-1).
+  - El Supabase anterior (`gdebmvpbbytdytjgqjkx`) quedó descartado; Supabase ahora es solo de Agéndalo IA.
+  - `DATABASE_URL` = endpoint pooled (`-pooler`, con `pgbouncer=true`); `DIRECT_URL` = endpoint directo (sin `-pooler`) para `prisma db push`.
+- El cron de recordatorios lo dispara el **bot-service de Railway** (scheduler interno cada 30 min), NO el cron de Vercel (plan Hobby).
+
 ## Latest Deployment
 - Commit: f1527a2
 - Date: 2026-05-06
