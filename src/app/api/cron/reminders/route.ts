@@ -188,12 +188,18 @@ export async function GET(req: NextRequest) {
   if (!authorized(req)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
-  try {
-    const reminders = await processReminders();
-    const followUps = await processFollowUps();
-    const campaigns = await processCampaigns();
-    return NextResponse.json({ ok: true, reminders, followUps, campaigns });
-  } catch (e: unknown) {
-    return NextResponse.json({ ok: false, error: (e as Error).message }, { status: 500 });
+  // Cada fase se aísla: que una falle (p.ej. tabla aún no migrada) no debe
+  // impedir el envío de recordatorios.
+  async function safe<T>(fn: () => Promise<T>): Promise<T | { error: string }> {
+    try {
+      return await fn();
+    } catch (e) {
+      return { error: (e as Error).message };
+    }
   }
+
+  const reminders = await safe(processReminders);
+  const followUps = await safe(processFollowUps);
+  const campaigns = await safe(processCampaigns);
+  return NextResponse.json({ ok: true, reminders, followUps, campaigns });
 }
