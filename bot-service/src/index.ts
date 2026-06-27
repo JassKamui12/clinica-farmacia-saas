@@ -57,7 +57,31 @@ app.post("/disconnect", async (req, res) => {
   res.json({ ok: true });
 });
 
+// Scheduler de recordatorios: este servicio corre 24/7, así que dispara el
+// cron de la app (recordatorios de cita, check-ins y campañas) cada 30 min.
+const NEXT_APP_URL = process.env.NEXT_APP_URL ?? "";
+const CRON_SECRET = process.env.CRON_SECRET ?? "";
+const REMINDERS_INTERVAL_MS = 30 * 60 * 1000;
+
+async function runReminders() {
+  if (!NEXT_APP_URL || !CRON_SECRET) return;
+  try {
+    const res = await fetch(`${NEXT_APP_URL}/api/cron/reminders?secret=${CRON_SECRET}`);
+    const data = await res.json().catch(() => ({}));
+    console.log(`[Reminders] tick ${res.status}`, JSON.stringify(data));
+  } catch (err) {
+    console.error("[Reminders] error:", err);
+  }
+}
+
 app.listen(PORT, () => {
   console.log(`[Bot Service] Corriendo en puerto ${PORT}`);
   baileysClient.connect();
+
+  if (NEXT_APP_URL && CRON_SECRET) {
+    console.log(`[Reminders] scheduler activo (cada ${REMINDERS_INTERVAL_MS / 60000} min)`);
+    setInterval(runReminders, REMINDERS_INTERVAL_MS);
+  } else {
+    console.warn("[Reminders] scheduler inactivo: faltan NEXT_APP_URL o CRON_SECRET");
+  }
 });
